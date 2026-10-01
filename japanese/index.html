@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>風鈴 · Wind Chime</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    background: #1a0d10;
+    cursor: none;
+    touch-action: none;
+  }
+  canvas {
+    display: block;
+    touch-action: none;
+  }
+  #cursorDot {
+    position: fixed;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff6d8 0%, #e8b45f 60%, rgba(232,180,95,0) 100%);
+    box-shadow: 0 0 16px 5px rgba(232, 180, 95, 0.45);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+  }
+  #startOverlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 40%, rgba(40, 10, 14, 0.55), rgba(10, 4, 8, 0.88));
+    z-index: 10;
+    cursor: pointer;
+    transition: opacity 0.7s ease;
+  }
+  #startOverlay .panel {
+    position: relative;
+    padding: 2.6em 3.4em 2.2em;
+    text-align: center;
+    color: #f3e3c3;
+    background: linear-gradient(160deg, rgba(64, 16, 20, 0.92), rgba(36, 10, 14, 0.94));
+    border: 1px solid rgba(212, 175, 90, 0.55);
+    box-shadow: 0 0 0 1px rgba(212, 175, 90, 0.15) inset, 0 20px 60px rgba(0,0,0,0.5);
+    border-radius: 4px;
+  }
+  #startOverlay .panel::before,
+  #startOverlay .panel::after {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border: 1px solid #d4af5a;
+    opacity: 0.8;
+  }
+  #startOverlay .panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+  #startOverlay .panel::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+  #startOverlay .cjk {
+    font-family: 'Noto Serif SC', 'PingFang SC', 'Microsoft YaHei', serif;
+    font-size: 2.6em;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: #f0c675;
+    margin: 0 0 0.1em 0;
+    text-shadow: 0 0 24px rgba(240, 198, 117, 0.35);
+  }
+  #startOverlay h1 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.15em;
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: 0.12em;
+    margin: 0 0 1.1em 0;
+    color: rgba(243, 227, 195, 0.75);
+  }
+  #startOverlay p {
+    font-size: 0.98em;
+    opacity: 0.8;
+    margin: 0.25em 0;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    letter-spacing: 0.02em;
+  }
+  #startOverlay .hint {
+    margin-top: 1.7em;
+    padding: 0.55em 1.5em;
+    border: 1px solid rgba(212, 175, 90, 0.55);
+    border-radius: 999px;
+    font-size: 0.8em;
+    letter-spacing: 0.08em;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: #f0c675;
+  }
+  #controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 6;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: rgba(243, 227, 195, 0.8);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    user-select: none;
+    background: linear-gradient(160deg, rgba(58, 16, 20, 0.55), rgba(30, 8, 12, 0.55));
+    border: 1px solid rgba(212, 175, 90, 0.35);
+    border-radius: 999px;
+    padding: 7px 16px;
+    backdrop-filter: blur(4px);
+  }
+  #controls label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    letter-spacing: 0.04em;
+  }
+  #windSlider {
+    width: 90px;
+    accent-color: #d4af5a;
+  }
+  #muteBtn {
+    background: rgba(212, 175, 90, 0.12);
+    border: 1px solid rgba(212, 175, 90, 0.45);
+    color: #f0c675;
+    border-radius: 999px;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    letter-spacing: 0.05em;
+  }
+  #muteBtn:hover {
+    background: rgba(212, 175, 90, 0.22);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="cursorDot"></div>
+<div id="controls">
+  <label>wind <input type="range" id="windSlider" min="0" max="100" value="35"></label>
+  <button id="muteBtn">mute</button>
+</div>
+<div id="startOverlay">
+  <div class="panel">
+    <div class="cjk">風鈴</div>
+    <h1>Wind Chime, cast in bronze &amp; jade</h1>
+    <p>Fifty-five chains drift on a painted silk fan,</p>
+    <p>stirred by an ever-turning wind &mdash; and by your hand.</p>
+    <div class="hint">click / tap to begin</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const cursorDot = document.getElementById('cursorDot');
+  const overlay = document.getElementById('startOverlay');
+  const windSlider = document.getElementById('windSlider');
+  const muteBtn = document.getElementById('muteBtn');
+
+  let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- smooth pseudo-noise ----------
+  function noise1(t, seed) {
+    return (
+      Math.sin(t * 0.6 + seed * 3.1) * 0.5 +
+      Math.sin(t * 1.3 + seed * 7.7) * 0.3 +
+      Math.sin(t * 0.27 + seed * 1.9) * 0.2
+    );
+  }
+
+  // ---------- audio ----------
+  let audioCtx = null;
+  let masterGain = null;
+  let reverbGain = null;
+  let dryGain = null;
+  let muted = false;
+  let recentStrikes = 0;
+
+  function makeImpulseResponse(ac, duration, decay) {
+    const rate = ac.sampleRate;
+    const length = Math.max(1, Math.floor(rate * duration));
+    const impulse = ac.createBuffer(2, length, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const data = impulse.getChannelData(ch);
+      for (let i = 0; i < length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+      }
+    }
+    return impulse;
+  }
+
+  function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.9;
+    masterGain.connect(audioCtx.destination);
+
+    dryGain = audioCtx.createGain();
+    dryGain.gain.value = 0.8;
+    dryGain.connect(masterGain);
+
+    const convolver = audioCtx.createConvolver();
+    convolver.buffer = makeImpulseResponse(audioCtx, 3.4, 2.3);
+    reverbGain = audioCtx.createGain();
+    reverbGain.gain.value = 0.6;
+    reverbGain.connect(convolver);
+    convolver.connect(masterGain);
+  }
+
+  // bronze: inharmonic, clangy partials. jade: purer, near-harmonic, longer sustain.
+  const PARTIALS_BRONZE = [
+    { ratio: 1.00, amp: 1.00, decay: 2.2 },
+    { ratio: 2.42, amp: 0.55, decay: 1.6 },
+    { ratio: 3.82, amp: 0.32, decay: 1.1 },
+    { ratio: 5.35, amp: 0.18, decay: 0.8 },
+    { ratio: 6.9,  amp: 0.10, decay: 0.55 },
+  ];
+  const PARTIALS_JADE = [
+    { ratio: 1.00, amp: 1.00, decay: 3.4 },
+    { ratio: 2.01, amp: 0.30, decay: 2.6 },
+    { ratio: 3.00, amp: 0.14, decay: 1.8 },
+    { ratio: 4.98, amp: 0.06, decay: 1.0 },
+  ];
+
+  function playNote(freq, velocity, pan, isJade) {
+    if (!audioCtx || muted) return;
+    if (recentStrikes > 16) return; // guard against overload when many tubes clang at once
+    recentStrikes++;
+    setTimeout(() => { recentStrikes--; }, 220);
+
+    const now = audioCtx.currentTime;
+    const vel = Math.min(1, Math.max(0.08, velocity));
+    const partials = isJade ? PARTIALS_JADE : PARTIALS_BRONZE;
+
+    const noteBus = audioCtx.createGain();
+    noteBus.gain.value = 1;
+    const panner = audioCtx.createStereoPanner();
+    panner.pan.value = Math.max(-1, Math.min(1, pan || 0));
+    noteBus.connect(panner);
+    panner.connect(dryGain);
+    panner.connect(reverbGain);
+
+    partials.forEach(p => {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq * p.ratio;
+
+      const g = audioCtx.createGain();
+      const peak = p.amp * vel * 0.32;
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(peak, now + 0.006);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * 0.001), now + p.decay + 0.4 * vel);
+
+      osc.connect(g);
+      g.connect(noteBus);
+      osc.start(now);
+      osc.stop(now + p.decay + 1.0);
+    });
+  }
+
+  // ---------- pentatonic scale spanning ~2.4 octaves so 55 tubes stay consonant ----------
+  const BASE = 174.6; // F3
+  const PENT_STEPS = [0, 2, 4, 7, 9]; // major-pentatonic semitone offsets
+  const NOTE_FREQS = [];
+  for (let oct = 0; oct < 3; oct++) {
+    PENT_STEPS.forEach(step => NOTE_FREQS.push(BASE * Math.pow(2, (oct * 12 + step) / 12)));
+  }
+
+  // ---------- the fan-shaped frame the tubes hang from ----------
+  const fan = { cx: 0, cy: 0, r: 0, maxAngle: 1.22 }; // ~140 degrees of spread
+
+  function updateFanGeometry() {
+    fan.cx = W / 2;
+    fan.cy = H * 0.155;
+    fan.r = Math.min(W * 0.46, H * 0.36, 480);
+  }
+
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const motionScale = reducedMotion ? 0.4 : 1; // tone down ambient drift, keep interactivity intact
+
+  // ---------- chime chains (multi-link Verlet ropes for natural, non-uniform sway) ----------
+  const ROD_COUNT = 55;
+  const SEGMENTS = 5;
+  const GRAVITY = 420;      // px/s^2 — dominates wind/cursor forces so chains hang
+                            // straight and settle instead of swinging indefinitely
+  const DAMPING = 0.975;    // velocity retained per step — light air friction
+  const WIND_ACCEL = 130;   // px/s^2 base scale for the wind field below — kept well
+                            // under GRAVITY so even full wind only sways gently
+  const rods = [];
+
+  // heavier toward the tip (as if weighted), so the bottom mostly just hangs under
+  // gravity while the upper links stay freer to sway — real chains behave this way
+  function invMassAt(s) {
+    return 1 - (s / SEGMENTS) * 0.65;
+  }
+
+  function buildRods() {
+    updateFanGeometry();
+    rods.length = 0;
+    // chains reach almost to the bottom of the viewport regardless of where their
+    // pivot sits on the fan's curved rim, so length varies per-chain (edge chains
+    // start higher up and so must be longer) with a little jitter for a natural,
+    // uneven curtain hem rather than a perfectly flat cut-off line
+    const floorY = H - Math.min(40, H * 0.03);
+    for (let i = 0; i < ROD_COUNT; i++) {
+      const t = i / (ROD_COUNT - 1);
+      const phi = -fan.maxAngle + t * 2 * fan.maxAngle;
+      const pivotX = fan.cx + fan.r * Math.sin(phi);
+      const pivotY = fan.cy + fan.r * Math.cos(phi);
+
+      const hem = (Math.sin(i * 2.3) * 0.5 + Math.sin(i * 0.9) * 0.5) * H * 0.025;
+      const totalLen = Math.max(H * 0.12, floorY + hem - pivotY);
+      const segLen = totalLen / SEGMENTS;
+      const pitchIdx = Math.floor(t * (NOTE_FREQS.length - 0.001));
+      const isJade = i % 7 === 3;
+      const isBeaded = i % 5 === 4;
+
+      // nodes[0] is the fixed pivot; nodes[1..SEGMENTS] are simulated with a slight
+      // initial jitter so the chains don't all start in perfect frozen symmetry
+      const nodes = [{ x: pivotX, y: pivotY, ox: pivotX, oy: pivotY }];
+      for (let s = 1; s <= SEGMENTS; s++) {
+        const jitter = (Math.random() - 0.5) * 6;
+        const x = pivotX + jitter * (s / SEGMENTS);
+        const y = pivotY + segLen * s;
+        nodes.push({ x, y, ox: x, oy: y });
+      }
+
+      rods.push({
+        nodes, segLen,
+        freq: NOTE_FREQS[pitchIdx],
+        seed: i * 1.31 + 0.4,
+        lastZeroCrossT: -10,
+        prevTipAngle: 0,
+        flash: 0,
+        isJade, isBeaded,
+        hue: isJade ? 148 + (i % 3) * 4 : 40 + (i % 5) * 3,
+        width: isJade ? 3.2 : 2.4 + (i % 4) * 0.4,
+      });
+    }
+  }
+  buildRods();
+  window.addEventListener('resize', buildRods);
+
+  // spatially- and temporally-varying wind: a slow travelling gust (phase depends on x,
+  // so it sweeps across rather than hitting every chain at once) plus independent
+  // per-chain turbulence and a very slow prevailing drift with its own per-chain phase.
+  // No term here shares a single global sign across all chains, which is what kept the
+  // whole curtain snapping in lockstep before.
+  function windAt(x, seed, tt) {
+    const travel = x * 0.0022;
+    const macro = noise1(tt * 0.16 - travel, seed * 0.37 + 4.1) * 0.55;
+    const micro = noise1(tt * 1.05 + seed * 2.9, seed + 8.8) * 0.45;
+    const drift = Math.sin(tt * 0.045 + seed * 0.61) * 0.3;
+    return macro + micro + drift;
+  }
+
+  // ---------- cursor tracking ----------
+  let mouseX = W / 2, mouseY = H * 0.5, prevMouseX = mouseX, prevMouseY = mouseY;
+  let mouseVX = 0, mouseVY = 0;
+  let hasMouse = false;
+
+  function onPointerMove(clientX, clientY) {
+    mouseX = clientX;
+    mouseY = clientY;
+    hasMouse = true;
+    cursorDot.style.left = clientX + 'px';
+    cursorDot.style.top = clientY + 'px';
+  }
+  window.addEventListener('mousemove', e => onPointerMove(e.clientX, e.clientY));
+  window.addEventListener('touchmove', e => {
+    if (e.touches[0]) onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+
+  // click / tap directly on a chain rings it, regardless of swipe speed —
+  // the main way touch users (and anyone not sweeping fast) get to play a note
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+    let closestRod = null, closestDist = 50;
+    for (const rod of rods) {
+      for (let s = 1; s <= SEGMENTS; s++) {
+        const n = rod.nodes[s];
+        const dx = n.x - cx, dy = n.y - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < closestDist) { closestDist = dist; closestRod = rod; }
+      }
+    }
+    if (closestRod) strike(closestRod, 0.65);
+  });
+
+  // ---------- device tilt as a mobile "wind" (opt-in, feature-detected) ----------
+  let tiltBias = 0;
+  function onTilt(e) {
+    if (e.gamma == null) return;
+    tiltBias = Math.max(-1, Math.min(1, e.gamma / 45));
+  }
+  function initTilt() {
+    if (typeof DeviceOrientationEvent === 'undefined') return;
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+      DeviceOrientationEvent.requestPermission()
+        .then(state => { if (state === 'granted') window.addEventListener('deviceorientation', onTilt); })
+        .catch(() => {});
+    } else {
+      window.addEventListener('deviceorientation', onTilt);
+    }
+  }
+
+  // ---------- preferences persisted across visits ----------
+  const PREF_KEY = 'windchime_prefs_v1';
+  let prefs = {};
+  try { prefs = JSON.parse(localStorage.getItem(PREF_KEY)) || {}; } catch (e) { prefs = {}; }
+  function savePrefs() {
+    try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch (e) { /* storage unavailable */ }
+  }
+
+  // ---------- start / mute ----------
+  function start() {
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    initTilt();
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.style.display = 'none', 720);
+  }
+  overlay.addEventListener('click', start);
+  overlay.addEventListener('touchstart', start, { passive: true });
+
+  muted = !!prefs.muted;
+  muteBtn.textContent = muted ? 'unmute' : 'mute';
+  muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    muteBtn.textContent = muted ? 'unmute' : 'mute';
+    if (masterGain) masterGain.gain.value = muted ? 0 : 0.9;
+    prefs.muted = muted;
+    savePrefs();
+  });
+
+  if (typeof prefs.wind === 'number') windSlider.value = prefs.wind;
+  let windStrength = parseFloat(windSlider.value) / 100;
+  windSlider.addEventListener('input', () => {
+    windStrength = parseFloat(windSlider.value) / 100;
+    prefs.wind = parseFloat(windSlider.value);
+    savePrefs();
+  });
+
+  // ---------- decorative petals ----------
+  const PETAL_COUNT = 16;
+  const petals = Array.from({ length: PETAL_COUNT }, (_, i) => ({
+    seed: i * 3.7 + 1,
+    x0: (i * 0.618) % 1,
+  }));
+
+  // ---------- physics + render loop ----------
+  let t = 0;
+  let lastTime = null;
+
+  function strike(rod, speed) {
+    const nowSec = t;
+    if (nowSec - rod.lastZeroCrossT < 0.14) return;
+    rod.lastZeroCrossT = nowSec;
+    const velocity = Math.min(1, speed * 2.4);
+    if (velocity < 0.03) return;
+    rod.flash = 1;
+    const pan = fan.r > 0 ? (rod.nodes[0].x - fan.cx) / fan.r : 0;
+    playNote(rod.freq, velocity, pan, rod.isJade);
+  }
+
+  function step(dt) {
+    t += dt;
+    const windScale = windStrength * WIND_ACCEL * motionScale; // slider at 0 means fully still air
+    const speed = hasMouse ? Math.sqrt(mouseVX * mouseVX + mouseVY * mouseVY) : 0;
+
+    for (let i = 0; i < rods.length; i++) {
+      const rod = rods[i];
+      const nodes = rod.nodes;
+
+      // integrate each free node (Verlet) — wind acts on every link along the
+      // chain's length, not just the tip, so the whole body ripples independently
+      for (let s = 1; s <= SEGMENTS; s++) {
+        const n = nodes[s];
+        const invMass = invMassAt(s);
+        let ax = (windAt(n.x, rod.seed + s * 0.53, t) + tiltBias * 0.5) * windScale * invMass;
+        let ay = GRAVITY; // gravity accelerates all masses equally — not scaled by invMass
+
+        if (hasMouse) {
+          const dx = mouseX - n.x;
+          const dy = mouseY - n.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const handRadius = 70;
+          if (dist < handRadius) {
+            // displacement here is purely speed-driven — a still cursor resting
+            // near a chain does not move it at all, only a moving one does, and
+            // the faster it moves the more the chain is nudged
+            const proximity = 1 - dist / handRadius;
+            ax += mouseVX * proximity * 1.8 * invMass;
+            ay += mouseVY * proximity * 1.8 * invMass;
+          }
+        }
+
+        const vx = (n.x - n.ox) * DAMPING;
+        const vy = (n.y - n.oy) * DAMPING;
+        n.ox = n.x;
+        n.oy = n.y;
+        n.x += vx + ax * dt * dt;
+        n.y += vy + ay * dt * dt;
+      }
+
+      // satisfy link-length constraints top-down from the fixed pivot — a single
+      // pass fully resolves a chain with one pinned end, giving stable, natural drape
+      for (let s = 1; s <= SEGMENTS; s++) {
+        const parent = nodes[s - 1];
+        const n = nodes[s];
+        const dx = n.x - parent.x;
+        const dy = n.y - parent.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+        const k = rod.segLen / dist;
+        n.x = parent.x + dx * k;
+        n.y = parent.y + dy * k;
+      }
+
+      // cursor strike: a moving pass near the tip rings the chime — like the rest
+      // of the interaction this only happens when the cursor is actually moving
+      if (hasMouse && speed > 1.5) {
+        const tip = nodes[SEGMENTS];
+        const dx = mouseX - tip.x;
+        const dy = mouseY - tip.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 70) {
+          const proximity = 1 - dist / 70;
+          strike(rod, (speed / 60) * proximity);
+        }
+      }
+
+      // natural strike: the chain's own swing carries it through vertical fast enough
+      const tip = nodes[SEGMENTS];
+      const prev = nodes[SEGMENTS - 1];
+      const tipAngle = Math.atan2(tip.x - prev.x, tip.y - prev.y);
+      const angVel = (tipAngle - rod.prevTipAngle) / dt;
+      if ((rod.prevTipAngle < 0 && tipAngle >= 0) || (rod.prevTipAngle > 0 && tipAngle <= 0)) {
+        strike(rod, Math.abs(angVel) * 0.3);
+      }
+      rod.prevTipAngle = tipAngle;
+
+      rod.flash *= 0.9;
+    }
+  }
+
+  // ---------- background: dusk sky, ink-wash mountains, moon, petals ----------
+  function drawBackground() {
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#2b0f16');
+    sky.addColorStop(0.35, '#3a1420');
+    sky.addColorStop(0.62, '#241226');
+    sky.addColorStop(1, '#130a18');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    // moon with soft halo
+    const moonX = W * 0.82, moonY = H * 0.20, moonR = Math.min(W, H) * 0.05;
+    const halo = ctx.createRadialGradient(moonX, moonY, 0, moonX, moonY, moonR * 5);
+    halo.addColorStop(0, 'rgba(245, 222, 179, 0.35)');
+    halo.addColorStop(1, 'rgba(245, 222, 179, 0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, moonR * 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#f9ecd0';
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // layered ink-wash mountains
+    const layers = [
+      { y: H * 0.66, amp: H * 0.05, color: 'rgba(20, 10, 18, 0.55)', freq: 1.4, seed: 3 },
+      { y: H * 0.74, amp: H * 0.07, color: 'rgba(15, 7, 14, 0.7)', freq: 1.0, seed: 11 },
+      { y: H * 0.84, amp: H * 0.06, color: 'rgba(10, 5, 10, 0.9)', freq: 0.7, seed: 22 },
+    ];
+    layers.forEach(layer => {
+      ctx.beginPath();
+      ctx.moveTo(0, H);
+      const steps = 24;
+      for (let s = 0; s <= steps; s++) {
+        const x = (s / steps) * W;
+        const y = layer.y - layer.amp * Math.abs(Math.sin(x * 0.004 * layer.freq + layer.seed));
+        ctx.lineTo(x, y);
+      }
+      ctx.lineTo(W, H);
+      ctx.closePath();
+      ctx.fillStyle = layer.color;
+      ctx.fill();
+    });
+
+    // drifting plum-blossom petals
+    ctx.save();
+    petals.forEach(p => {
+      const fall = (t * 0.05 * motionScale + p.x0) % 1.15;
+      const px = (p.x0 * W + Math.sin(t * 0.4 + p.seed) * 40 * motionScale) % W;
+      const py = fall * H * 1.05 - H * 0.05;
+      const sway = Math.sin(t * 0.9 + p.seed) * 0.4 * motionScale;
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(sway + t * 0.3 * motionScale);
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = '#e8a6b0';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 4.5, 2.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+    ctx.restore();
+  }
+
+  // ---------- the painted silk fan (main frame) ----------
+  function drawFan() {
+    const a0 = Math.PI / 2 - fan.maxAngle;
+    const a1 = Math.PI / 2 + fan.maxAngle;
+
+    // hanging cord + Chinese knot above the fan pivot
+    const anchorY = fan.cy - H * 0.09;
+    ctx.strokeStyle = 'rgba(214, 178, 120, 0.55)';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(fan.cx, anchorY - 30);
+    ctx.lineTo(fan.cx, fan.cy);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(fan.cx, anchorY);
+    ctx.fillStyle = '#9c1f28';
+    ctx.strokeStyle = '#d4af5a';
+    ctx.lineWidth = 1.2;
+    for (let k = 0; k < 3; k++) {
+      ctx.beginPath();
+      ctx.ellipse(0, k * 3, 9 - k, 6 - k * 0.6, k * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#e8b45f';
+    ctx.beginPath();
+    ctx.arc(0, 2, 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // fan shadow for depth
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)';
+    ctx.shadowBlur = 28;
+    ctx.shadowOffsetY = 10;
+
+    // fan silk panel
+    ctx.beginPath();
+    ctx.moveTo(fan.cx, fan.cy);
+    ctx.arc(fan.cx, fan.cy, fan.r, a0, a1);
+    ctx.closePath();
+    const silk = ctx.createRadialGradient(fan.cx, fan.cy, fan.r * 0.1, fan.cx, fan.cy, fan.r);
+    silk.addColorStop(0, '#7a1620');
+    silk.addColorStop(0.55, '#8f1c26');
+    silk.addColorStop(1, '#5c1016');
+    ctx.fillStyle = silk;
+    ctx.fill();
+    ctx.restore();
+
+    // gold rim
+    ctx.beginPath();
+    ctx.arc(fan.cx, fan.cy, fan.r, a0, a1);
+    ctx.strokeStyle = '#d4af5a';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(fan.cx + fan.r * Math.cos(a0), fan.cy + fan.r * Math.sin(a0));
+    ctx.lineTo(fan.cx, fan.cy);
+    ctx.lineTo(fan.cx + fan.r * Math.cos(a1), fan.cy + fan.r * Math.sin(a1));
+    ctx.strokeStyle = 'rgba(212, 175, 90, 0.65)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // decorative fan ribs
+    ctx.strokeStyle = 'rgba(212, 175, 90, 0.4)';
+    ctx.lineWidth = 1;
+    const ribCount = 16;
+    for (let k = 0; k <= ribCount; k++) {
+      const ang = a0 + (a1 - a0) * (k / ribCount);
+      ctx.beginPath();
+      ctx.moveTo(fan.cx, fan.cy);
+      ctx.lineTo(fan.cx + fan.r * Math.cos(ang), fan.cy + fan.r * Math.sin(ang));
+      ctx.stroke();
+    }
+
+    // brush-painted cloud swirl (simple ink motif) upper-left of medallion
+    ctx.save();
+    ctx.translate(fan.cx - fan.r * 0.32, fan.cy + fan.r * 0.32);
+    ctx.strokeStyle = 'rgba(232, 220, 190, 0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-18, 4);
+    ctx.bezierCurveTo(-12, -10, 0, -10, 4, 0);
+    ctx.bezierCurveTo(8, -8, 20, -8, 22, 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // central medallion with a brushed character
+    const medX = fan.cx, medY = fan.cy + fan.r * 0.5;
+    const medR = fan.r * 0.15;
+    ctx.beginPath();
+    ctx.arc(medX, medY, medR, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.fill();
+    ctx.strokeStyle = '#d4af5a';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = '#f0d9a6';
+    ctx.font = `${Math.round(medR * 1.35)}px 'Noto Serif SC', 'PingFang SC', 'Microsoft YaHei', serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('風', medX, medY + medR * 0.05);
+  }
+
+  // ---------- one chain, drawn as a smooth curve through its simulated links ----------
+  function drawRod(rod) {
+    const nodes = rod.nodes;
+    const glow = rod.flash;
+    const lightBoost = glow * 28;
+
+    // smooth cord through the nodes (quadratic curve landing on midpoints)
+    ctx.beginPath();
+    ctx.moveTo(nodes[0].x, nodes[0].y);
+    for (let s = 1; s < nodes.length - 1; s++) {
+      const midX = (nodes[s].x + nodes[s + 1].x) / 2;
+      const midY = (nodes[s].y + nodes[s + 1].y) / 2;
+      ctx.quadraticCurveTo(nodes[s].x, nodes[s].y, midX, midY);
+    }
+    const last = nodes[nodes.length - 1];
+    ctx.lineTo(last.x, last.y);
+
+    if (glow > 0.05) {
+      ctx.shadowColor = `hsla(${rod.hue}, 90%, 75%, ${glow})`;
+      ctx.shadowBlur = 14 * glow;
+    }
+    ctx.strokeStyle = `hsl(${rod.hue}, ${rod.isJade ? 42 : 58}%, ${(rod.isJade ? 40 : 55) + lightBoost}%)`;
+    ctx.lineWidth = rod.width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // link/bead marks along the chain
+    for (let s = 1; s < nodes.length - 1; s++) {
+      const n = nodes[s];
+      ctx.beginPath();
+      if (rod.isBeaded) {
+        ctx.arc(n.x, n.y, rod.width * 0.9, 0, Math.PI * 2);
+        ctx.fillStyle = `hsl(${rod.hue}, 60%, ${58 + lightBoost}%)`;
+        ctx.fill();
+      } else {
+        ctx.arc(n.x, n.y, rod.width * 0.6, 0, Math.PI * 2);
+        ctx.strokeStyle = `hsl(${rod.hue}, 50%, ${64 + lightBoost}%)`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+    }
+
+    // small bell + tassel at the tip, oriented with the final segment
+    const prev = nodes[nodes.length - 2];
+    const angle = Math.atan2(last.x - prev.x, last.y - prev.y);
+    ctx.save();
+    ctx.translate(last.x, last.y);
+    ctx.rotate(angle);
+    ctx.beginPath();
+    ctx.moveTo(-4.5, 0);
+    ctx.lineTo(4.5, 0);
+    ctx.lineTo(3.2, 8);
+    ctx.lineTo(-3.2, 8);
+    ctx.closePath();
+    ctx.fillStyle = `hsl(${rod.hue}, ${rod.isJade ? 40 : 60}%, ${(rod.isJade ? 42 : 48) + lightBoost}%)`;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(180, 40, 45, 0.75)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(0, 8);
+    ctx.lineTo(0, 15);
+    ctx.stroke();
+
+    // a small weighted bead anchors the tip — visually reads as what keeps the
+    // bottom of the chain steady, matching the added inertia in the physics
+    ctx.beginPath();
+    ctx.ellipse(0.6, 19, 3.4, 3.9, 0, 0, Math.PI * 2);
+    ctx.fillStyle = `hsl(${rod.hue}, 35%, ${28 + lightBoost}%)`;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(-0.6, 17.5, 1.3, 0, Math.PI * 2);
+    ctx.fillStyle = `hsl(${rod.hue}, 60%, ${55 + lightBoost}%)`;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // ---------- central jade pendant (the chime's heart) ----------
+  function drawPendant() {
+    const sailY = fan.cy + H * 0.30;
+    ctx.strokeStyle = 'rgba(230, 210, 170, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(fan.cx, fan.cy);
+    ctx.lineTo(fan.cx, sailY);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(fan.cx, sailY);
+
+    // gold cap
+    ctx.fillStyle = '#d4af5a';
+    ctx.beginPath();
+    ctx.roundRect(-8, -6, 16, 8, 3);
+    ctx.fill();
+
+    // jade gem
+    const gemGrad = ctx.createRadialGradient(-6, -10, 2, 0, 6, 30);
+    gemGrad.addColorStop(0, '#bfe6c9');
+    gemGrad.addColorStop(0.5, '#4f9e6e');
+    gemGrad.addColorStop(1, '#245c3f');
+    ctx.fillStyle = gemGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, 18, 16, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(230, 245, 235, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // tassel below
+    ctx.strokeStyle = 'rgba(180, 40, 45, 0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, 40);
+    ctx.lineTo(0, 54);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 58, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#9c1f28';
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawScene() {
+    drawBackground();
+    drawFan();
+    for (const rod of rods) drawRod(rod);
+    drawPendant();
+  }
+
+  let rafId = null;
+
+  function frame(now) {
+    if (lastTime === null) lastTime = now;
+    let dt = (now - lastTime) / 1000;
+    dt = Math.min(dt, 0.05);
+    lastTime = now;
+
+    mouseVX = (mouseX - prevMouseX) / Math.max(dt, 0.001) * 0.016;
+    mouseVY = (mouseY - prevMouseY) / Math.max(dt, 0.001) * 0.016;
+    prevMouseX = mouseX;
+    prevMouseY = mouseY;
+
+    step(dt);
+
+    ctx.clearRect(0, 0, W, H);
+    drawScene();
+
+    rafId = requestAnimationFrame(frame);
+  }
+
+  rafId = requestAnimationFrame(frame);
+
+  // pause the render loop and audio while the tab is hidden — no reason to burn
+  // CPU/battery animating and scheduling notes nobody can see or hear
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+      if (audioCtx && audioCtx.state === 'running') audioCtx.suspend();
+    } else {
+      if (rafId === null) { lastTime = null; rafId = requestAnimationFrame(frame); }
+      if (audioCtx && audioCtx.state === 'suspended' && !muted) audioCtx.resume();
+    }
+  });
+})();
+</script>
+</body>
+</html>

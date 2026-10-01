@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budarina — Temple Chimes of India</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&family=Noto+Sans+Tamil:wght@400;600&family=Noto+Sans+Malayalam:wght@400;600&family=Noto+Sans+Kannada:wght@400;600&family=Noto+Sans+Telugu:wght@400;600&family=Noto+Sans+Oriya:wght@400;600&family=Noto+Sans+Bengali:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&family=Noto+Sans+Gujarati:wght@400;600&family=Noto+Sans+Gurmukhi:wght@400;600&family=Noto+Sans+Arabic:wght@400;600&family=Fraunces:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #4a3a24;
+    --accent: #a8452e;
+    --gold: #c9962b;
+    --paper: #e9dfc6;
+  }
+  html, body {
+    margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%;
+    background: var(--paper);
+    font-family: 'Fraunces', Georgia, serif;
+    color: var(--ink);
+    cursor: none;
+    touch-action: none;
+  }
+  canvas { display: block; touch-action: none; }
+  #cursorDot {
+    position: fixed; width: 8px; height: 8px; border-radius: 50%;
+    background: radial-gradient(circle, #fff3d6 0%, #c9962b 60%, rgba(201,150,43,0) 100%);
+    box-shadow: 0 0 14px 4px rgba(201,150,43,0.4);
+    pointer-events: none; transform: translate(-50%,-50%); z-index: 20;
+  }
+
+  /* ---------- header ---------- */
+  header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 8;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 30px; box-sizing: border-box;
+  }
+  .logo { font-weight: 600; font-size: 1.1em; color: var(--ink); text-decoration: none; letter-spacing: 0.02em; }
+  nav { display: flex; gap: 22px; font-size: 0.92em; }
+  nav a { color: var(--ink); text-decoration: none; opacity: 0.75; }
+  nav a:hover { opacity: 1; }
+  #playBtn {
+    background: var(--ink); color: var(--paper); border: none; border-radius: 3px;
+    padding: 9px 20px; font-family: 'Fraunces', serif; font-size: 0.9em; letter-spacing: 0.03em;
+    cursor: pointer;
+  }
+  #playBtn:hover { background: var(--accent); }
+
+  /* ---------- quick destination cards ---------- */
+  .quickCard {
+    position: fixed; top: 90px; z-index: 7; width: 92px; text-align: center;
+    background: rgba(233, 223, 194, 0.7); border: 1px dashed rgba(74,58,36,0.4);
+    border-radius: 3px; padding: 14px 6px 10px; font-size: 0.8em; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .quickCard .badge { font-size: 1.3em; }
+  .quickCard.left { left: 30px; }
+  .quickCard.right { right: 30px; }
+  .quickCard:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------- hero text ---------- */
+  #intro {
+    position: fixed; left: 24px; bottom: 118px; z-index: 7; max-width: 400px;
+    background: radial-gradient(ellipse at 30% 50%, rgba(233,223,194,0.88) 55%, rgba(233,223,194,0));
+    padding: 14px 18px 14px 12px; border-radius: 4px;
+  }
+  #introTag { font-size: 0.85em; font-style: italic; opacity: 0.75; margin-bottom: 6px; }
+  #introTitle { font-size: 1.55em; font-weight: 600; line-height: 1.28; margin: 0; white-space: pre-line; }
+  #blurbBlock {
+    position: fixed; right: 24px; bottom: 118px; z-index: 7; max-width: 230px; text-align: right; font-size: 0.92em;
+    background: radial-gradient(ellipse at 70% 50%, rgba(233,223,194,0.88) 55%, rgba(233,223,194,0));
+    padding: 14px 12px 14px 18px; border-radius: 4px;
+  }
+  #blurbBlock p { margin: 0 0 10px 0; opacity: 0.85; }
+  #aboutBtn { background: none; border: none; color: var(--accent); font-family: inherit; font-size: 0.9em; cursor: pointer; text-decoration: underline; }
+  #bottomNav {
+    position: fixed; left: 24px; bottom: 28px; z-index: 7; display: flex; gap: 18px; font-size: 0.85em;
+    background: rgba(233,223,194,0.75); padding: 6px 14px; border-radius: 999px;
+  }
+  #bottomNav a { color: var(--ink); opacity: 0.7; text-decoration: none; }
+
+  /* ---------- settings panel ---------- */
+  #panel {
+    position: fixed; top: 0; right: -340px; width: 320px; height: 100%; z-index: 15;
+    background: rgba(238, 230, 206, 0.97); border-left: 1px solid rgba(74,58,36,0.25);
+    box-shadow: -12px 0 30px rgba(0,0,0,0.15);
+    padding: 24px 22px; box-sizing: border-box; overflow-y: auto;
+    transition: right 0.35s ease; font-size: 0.85em;
+  }
+  #panel.open { right: 0; }
+  #panel h3 { font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.6; margin: 22px 0 10px; }
+  #panel h3:first-child { margin-top: 0; }
+  .row { display: flex; align-items: center; justify-content: space-between; margin: 7px 0; gap: 10px; }
+  .row label { opacity: 0.85; }
+  .row input[type="text"], .row input[type="number"], .row select {
+    width: 84px; padding: 4px 6px; border: 1px solid rgba(74,58,36,0.35); border-radius: 3px;
+    background: #fbf6e9; font-family: inherit; font-size: 0.95em; color: var(--ink);
+  }
+  .row select { width: 130px; }
+  #rebuildBtn, #closePanel {
+    width: 100%; margin-top: 8px; padding: 8px; background: var(--ink); color: var(--paper);
+    border: none; border-radius: 3px; font-family: inherit; cursor: pointer; font-size: 0.88em;
+  }
+  #rebuildBtn:hover, #closePanel:hover { background: var(--accent); }
+  #closePanel { background: none; color: var(--ink); border: 1px solid rgba(74,58,36,0.35); margin-bottom: 4px; }
+
+  /* ---------- scroll sections ---------- */
+  #scrollArea { position: relative; z-index: 12; }
+  .spacer { height: 100vh; }
+  section.page { min-height: 100vh; box-sizing: border-box; padding: 90px 30px 60px; background: var(--paper); }
+  section.page h2 { font-size: 1.6em; margin-bottom: 6px; }
+  section.page > p.lead { opacity: 0.8; margin-bottom: 26px; max-width: 520px; }
+
+  #destGrid { display: flex; flex-wrap: wrap; gap: 12px; max-width: 700px; }
+  .destChip {
+    padding: 10px 18px; border: 1px solid rgba(74,58,36,0.35); border-radius: 999px;
+    background: rgba(255,255,255,0.3); cursor: pointer; font-family: inherit; font-size: 0.95em;
+  }
+  .destChip.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .destChip:hover { border-color: var(--accent); }
+
+  #contribForm { display: flex; gap: 10px; margin-bottom: 18px; max-width: 420px; }
+  #contribForm input {
+    flex: 1; padding: 9px 12px; border: 1px solid rgba(74,58,36,0.35); border-radius: 3px;
+    font-family: inherit; background: #fbf6e9;
+  }
+  #contribForm button {
+    padding: 9px 18px; background: var(--ink); color: var(--paper); border: none;
+    border-radius: 3px; cursor: pointer; font-family: inherit;
+  }
+  #contribList { list-style: none; padding: 0; opacity: 0.8; }
+  #contribList li { padding: 4px 0; border-bottom: 1px dashed rgba(74,58,36,0.25); max-width: 300px; }
+  #contribEmpty { opacity: 0.65; font-style: italic; }
+
+  /* ---------- about modal ---------- */
+  #aboutModal {
+    position: fixed; inset: 0; z-index: 30; display: none; align-items: center; justify-content: center;
+    background: rgba(40, 30, 15, 0.45);
+  }
+  #aboutModal.open { display: flex; }
+  #aboutModal .card {
+    max-width: 460px; background: #f6efdd; border-radius: 6px; padding: 30px 32px;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.35); position: relative;
+  }
+  #aboutModal h3 { margin-top: 0; }
+  #aboutModal button.close {
+    position: absolute; top: 14px; right: 16px; background: none; border: none;
+    font-size: 1.2em; cursor: pointer; color: var(--ink);
+  }
+  #aboutModal .credit { font-size: 0.8em; opacity: 0.6; margin-top: 16px; }
+  #aboutModal .credit a { color: var(--accent); }
+
+  #startHint {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 9;
+    font-size: 0.8em; opacity: 0.6; letter-spacing: 0.04em; pointer-events: none;
+    transition: opacity 0.6s ease;
+  }
+
+  /* ---------- start gate (sound needs a real click before it can play at all) ---------- */
+  #startGate {
+    position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 40%, rgba(233,223,194,0.7), rgba(205,185,141,0.94));
+    cursor: pointer; transition: opacity 0.6s ease;
+  }
+  #startGate .panel {
+    background: rgba(246, 239, 221, 0.96); border: 1px solid rgba(74,58,36,0.35);
+    border-radius: 6px; padding: 34px 40px; text-align: center; box-shadow: 0 20px 50px rgba(60,40,10,0.25);
+  }
+  #startGate h2 { margin: 0 0 8px; font-size: 1.4em; }
+  #startGate p { margin: 0 0 18px; opacity: 0.8; max-width: 340px; }
+  #startGate .hint {
+    display: inline-block; padding: 8px 22px; border: 1px solid rgba(74,58,36,0.4);
+    border-radius: 999px; font-size: 0.85em; letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="cursorDot"></div>
+<div id="home" style="position:absolute; top:0; height:1px; width:1px;"></div>
+
+<header>
+  <a class="logo" href="#home">Budarina</a>
+  <nav>
+    <a href="#home">Home</a><a href="#destinations">Destinations</a><a href="#contributions">Contributions</a>
+  </nav>
+  <button id="playBtn" type="button">Play</button>
+</header>
+
+<div class="quickCard left" id="quickLeft"><span class="badge">🛕</span><span id="quickLeftName">Assam</span></div>
+<div class="quickCard right" id="quickRight"><span class="badge">🛕</span><span id="quickRightName">Kerala</span></div>
+
+<div id="intro">
+  <div id="introTag"></div>
+  <h1 id="introTitle"></h1>
+</div>
+<div id="blurbBlock">
+  <p id="blurbText"></p>
+  <button id="aboutBtn" type="button">About</button>
+</div>
+<div id="bottomNav"><a href="#home">Home</a><a href="#destinations">Destinations</a><a href="#contributions">Contributions</a></div>
+
+<div id="startHint">click anywhere to enable sound</div>
+
+<div id="startGate">
+  <div class="panel">
+    <h2>Budarina — Temple Chimes of India</h2>
+    <p>A curtain for every state, hung from one of its own temples.</p>
+    <div class="hint">click / tap to begin</div>
+  </div>
+</div>
+
+<div id="panel">
+  <button id="closePanel" type="button">Close ✕</button>
+  <h3>Destination</h3>
+  <div class="row"><label>State</label><select id="countrySelect"></select></div>
+
+  <h3>Cloth</h3>
+  <div class="row"><label>Width</label><input id="fWidth" type="number"></div>
+  <div class="row"><label>Height</label><input id="fHeight" type="number"></div>
+  <div class="row"><label>Columns</label><input id="fCols" type="number"></div>
+  <div class="row"><label>Rows</label><input id="fRows" type="number"></div>
+  <button id="rebuildBtn" type="button">Rebuild cloth</button>
+
+  <h3>Motion &amp; sound</h3>
+  <div class="row"><label>Gravity</label><input id="fGravity" type="number" step="0.01"></div>
+  <div class="row"><label>Damping</label><input id="fDamping" type="number" step="0.001"></div>
+  <div class="row"><label>Precision</label><input id="fPrecision" type="number"></div>
+  <div class="row"><label>Stretch</label><input id="fStretch" type="number" step="0.01"></div>
+  <div class="row"><label>Compress</label><input id="fCompress" type="number" step="0.01"></div>
+  <div class="row"><label>Touch radius</label><input id="fTouchRadius" type="number"></div>
+  <div class="row"><label>Touch force</label><input id="fTouchForce" type="number" step="0.1"></div>
+  <div class="row"><label>Door chimes</label><label><input id="fChimesOn" type="checkbox" checked> on</label></div>
+  <div class="row"><label>Chime volume</label><input id="fChimeVol" type="number" step="0.01"></div>
+  <div class="row"><label>Keep in bounds</label><label><input id="fKeepBounds" type="checkbox" checked> on</label></div>
+</div>
+
+<div id="scrollArea" style="position:absolute; top:0; left:0; width:100%; pointer-events:none;">
+  <div class="spacer"></div>
+  <section class="page" id="destinations" style="pointer-events:auto;">
+    <h2>Destinations</h2>
+    <p class="lead">Every state gets its own curtain — its own temple, script, and sound.</p>
+    <div id="destGrid"></div>
+  </section>
+  <section class="page" id="contributions" style="pointer-events:auto;">
+    <h2>Contributions</h2>
+    <p class="lead">Which Indian state should we hang next, and which temple should it be?</p>
+    <form id="contribForm">
+      <input id="contribInput" type="text" placeholder="State name" required>
+      <button type="submit">Add</button>
+    </form>
+    <ul id="contribList"></ul>
+    <div id="contribEmpty">No contributions yet — hang the first state.</div>
+  </section>
+</div>
+
+<div id="aboutModal">
+  <div class="card">
+    <button class="close" type="button" aria-label="Close about">✕</button>
+    <h3>About this piece</h3>
+    <p>A curtain for every Indian state — each one hung beneath one of its own well-known temples, woven from the script of the language actually spoken there.</p>
+    <p>Move your cursor through the letters and they part like a beaded doorway curtain, then settle back and ring softly as they go.</p>
+    <p class="credit">Design concept inspired by <a href="https://marinabudarina.github.io/chimes/" target="_blank" rel="noopener">marinabudarina.github.io/chimes</a>. Text, artwork, and code in this recreation are original.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ================= Indian state data (original text/art — not copied from any source) =================
+  // each state is keyed to the specific temple given in the state->temple mapping, whose real
+  // architecture sets the roof/gate style, and to the script of the language actually spoken there.
+  // sky: 3-stop background gradient (top -> horizon). particleColor: ambient dust tint.
+  // landscape: the terrain silhouette drawn behind the temple (see drawLandscape).
+  // scaleBase/scaleSteps: the scale each state's chimes ring in. timbre: which partial set voices it.
+  const COUNTRIES = [
+    { id:'andhra', name:'Andhra Pradesh', badge:'🛕', font:"'Noto Sans Telugu', sans-serif", roof:'gopuram', landscape:'hills',
+      colors:['#a8452e','#c9962b','#e0b545'], sky:['#f3e0c0','#e6c088','#c98a52'], particleColor:'#6a2a1a',
+      scaleBase:246.9, scaleSteps:[0,2,4,7,9], timbre:'bell',
+      temple:'Venkateswara Temple (Tirupati Balaji), Tirupati',
+      tag:'భక్తి (bhakti) — a quiet devotion', title:'Andhra Pradesh — hilltop shrines, temple lamps,\na gopuram climbing toward the clouds',
+      blurb:'Climb the hill, ring the bell, and the crowd hums like a hive.',
+      verse:'ఆలయ గోపురం కింద, గాలి గంటలు మృదువుగా మోగుతాయి. ప్రతి శబ్దం ఒక పాత కథను చెబుతుంది. చేయి చాపి వినండి. ' },
+    { id:'assam', name:'Assam', badge:'🛕', font:"'Noto Sans Bengali', sans-serif", roof:'dome', landscape:'hills',
+      colors:['#7a1c3a','#a8523a','#c9962b'], sky:['#eee6da','#d9c2a0','#b89a72'], particleColor:'#4a2a1a',
+      scaleBase:196, scaleSteps:[0,1,4,5,7,8,10], timbre:'gong',
+      temple:'Kamakhya Temple, Guwahati',
+      tag:'শক্তি (shakti) — a living power', title:'Assam — misty tea gardens, river islands,\na temple shaped like a sleeping hill',
+      blurb:'Here the goddess is stone, and the incense never quite clears.',
+      verse:'মন্দিরৰ শিখৰৰ তলত, বায়ুৰ ঘণ্টা মৃদুকণ্ঠে বাজে। প্ৰতিটো ধ্বনিয়ে এটা পুৰণি কাহিনী কয়। হাত বাঢ়ি শুনা। ' },
+    { id:'bihar', name:'Bihar', badge:'🛕', font:"'Noto Sans Devanagari', sans-serif", roof:'pyramid', landscape:'plains',
+      colors:['#8a3a1a','#c9962b','#e0b545'], sky:['#f0e6d0','#dfc99a','#c2a06a'], particleColor:'#5a3a1a',
+      scaleBase:220, scaleSteps:[0,2,4,7,9], timbre:'bell',
+      temple:'Mahabodhi Temple, Bodh Gaya',
+      tag:'बोधि (bodhi) — a path to stillness', title:'Bihar — a tree of stillness, red brick walls,\na spire older than the empires around it',
+      blurb:'Pilgrims sit for hours beneath the same tree that once sheltered the Buddha.',
+      verse:'बोधि वृक्ष के नीचे, हवा की घंटियाँ शांति से बजती हैं। हर ध्वनि ज्ञान की एक पुरानी कहानी सुनाती है। हाथ बढ़ाकर सुनो। ' },
+    { id:'delhi', name:'Delhi', badge:'🛕', font:"'Noto Sans Devanagari', sans-serif", roof:'multidome', landscape:'urban',
+      colors:['#c98a8a','#e0b545','#f0d8c0'], sky:['#f0e8de','#e0d0c0','#c9b09a'], particleColor:'#6a4a3a',
+      scaleBase:293.7, scaleSteps:[0,2,4,5,7,9,11], timbre:'crystal',
+      temple:'Akshardham Temple, Delhi',
+      tag:'शिल्प (shilp) — the art of stone', title:'Delhi — carved marble halls, fountains of stone,\na gate built by ten thousand patient hands',
+      blurb:'Every wall here was carved by hand, one small figure at a time.',
+      verse:'अक्षरधाम के तराशे हुए पत्थरों के नीचे, हवा की घंटियाँ धीरे बजती हैं। हर नक्काशी एक पुरानी कहानी कहती है। हाथ बढ़ाकर सुनो। ' },
+    { id:'gujarat', name:'Gujarat', badge:'🛕', font:"'Noto Sans Gujarati', sans-serif", roof:'dome', landscape:'coast',
+      colors:['#3a5a6a','#c9962b','#e0b545'], sky:['#eaf1ee','#cfe3da','#a8c9bc'], particleColor:'#2a4a3a',
+      scaleBase:293.7, scaleSteps:[0,2,4,7,9], timbre:'crystal',
+      temple:'Somnath Temple, Prabhas Patan',
+      tag:'શ્રદ્ધા (shraddha) — a steady faith', title:'Gujarat — salt-white coastlines, temple bells,\na shrine rebuilt each time it fell',
+      blurb:'Rebuilt seven times, the shrine still faces the same tide.',
+      verse:'મંદિરના શિખર નીચે, પવનની ઘંટડીઓ ધીમેથી વાગે છે. દરેક અવાજ એક જૂની વાર્તા કહે છે. હાથ લંબાવીને સાંભળો. ' },
+    { id:'himachal', name:'Himachal Pradesh', badge:'🛕', font:"'Noto Sans Devanagari', sans-serif", roof:'pagoda', landscape:'mountain',
+      colors:['#5a3a1a','#8a6a3a','#c9962b'], sky:['#eaf1f5','#cfe3ec','#9db8c9'], particleColor:'#2a3a4a',
+      scaleBase:233, scaleSteps:[0,2,3,5,7,8,10], timbre:'wood',
+      temple:'Hadimba Devi Temple, Manali',
+      tag:'देवदार (devdar) — a forest’s quiet watch', title:'Himachal Pradesh — deodar forests, mountain air,\na wooden shrine tucked into the pines',
+      blurb:'A single deodar trunk still holds up the roof, centuries on.',
+      verse:'हिडिम्बा के देवदार वनों के बीच, लकड़ी की घंटियाँ धीरे सरसराती हैं। हर सरसराहट एक पुरानी कहानी कहती है। हाथ बढ़ाकर सुनो। ' },
+    { id:'jk', name:'Jammu & Kashmir', badge:'🛕', font:"'Noto Sans Arabic', sans-serif", roof:'cave', landscape:'mountain',
+      colors:['#4a6a7a','#c9962b','#e8e8e8'], sky:['#e8eef2','#cddbe6','#a9c2d6'], particleColor:'#3a4a5a',
+      scaleBase:220, scaleSteps:[0,1,4,5,7,8,10], timbre:'gong',
+      temple:'Vaishno Devi Temple, Katra',
+      tag:'یقین (yaqeen) — a traveler’s faith', title:'Jammu & Kashmir — mountain paths, prayer flags,\na cave shrine higher than the clouds allow',
+      blurb:'Thousands climb the mountain path each day, and the bells still greet them all.',
+      verse:'وشنو دیوی کے پہاڑی راستے پر، ہوا کی گھنٹیاں دھیرے سے بجتی ہیں۔ ہر آواز ایک پرانی کہانی سناتی ہے۔ ہاتھ بڑھا کر سنو۔ ' },
+    { id:'jharkhand', name:'Jharkhand', badge:'🛕', font:"'Noto Sans Devanagari', sans-serif", roof:'dome', landscape:'hills',
+      colors:['#7a1620','#c9962b','#e0b545'], sky:['#eee6da','#d9c2a0','#b89a72'], particleColor:'#4a2a1a',
+      scaleBase:174.6, scaleSteps:[0,2,4,7,9], timbre:'bell',
+      temple:'Baidyanath Dham, Deoghar',
+      tag:'श्रद्धा (shraddha) — an old devotion', title:'Jharkhand — forested hills, forge-town smoke,\na jyotirlinga kept quiet by the trees',
+      blurb:'The lingam here is said to grant whatever the heart quietly asks.',
+      verse:'बैद्यनाथ के शिखर के नीचे, हवा की घंटियाँ धीरे धीरे बजती हैं। हर ध्वनि एक पुरानी आस्था की कहानी कहती है। हाथ बढ़ाकर सुनो। ' },
+    { id:'karnataka', name:'Karnataka', badge:'🛕', font:"'Noto Sans Kannada', sans-serif", roof:'gopuram', landscape:'hills',
+      colors:['#6a4a2a','#a8783a','#c9962b'], sky:['#f0e6d0','#dfc99a','#c2a06a'], particleColor:'#5a3a1a',
+      scaleBase:293.7, scaleSteps:[0,2,3,5,7,8,10], timbre:'gong',
+      temple:'Virupaksha Temple, Hampi',
+      tag:'ಪ್ರೀತಿ (preethi) — a small devotion', title:'Karnataka — ruined empires, granite hills,\ntowers carved from stone and silence',
+      blurb:'Among ruined stone halls, an old bell still remembers music.',
+      verse:'ದೇವಾಲಯದ ಗೋಪುರದ ಕೆಳಗೆ, ಗಾಳಿಯ ಗಂಟೆಗಳು ಮೃದುವಾಗಿ ಮೊಳಗುತ್ತವೆ. ಪ್ರತಿ ಶಬ್ದವೂ ಹಳೆಯ ಕಥೆಯನ್ನು ಹೇಳುತ್ತದೆ. ಕೈ ಚಾಚಿ ಕೇಳಿ. ' },
+    { id:'kerala', name:'Kerala', badge:'🛕', font:"'Noto Sans Malayalam', sans-serif", roof:'gopuram', landscape:'coast',
+      colors:['#4a5a4a','#8a9a7a','#c9962b'], sky:['#eef2d9','#d8e5b0','#a9c48a'], particleColor:'#345a2a',
+      scaleBase:220, scaleSteps:[0,2,3,7,9], timbre:'wood',
+      temple:'Padmanabhaswamy Temple, Thiruvananthapuram',
+      tag:'സ്നേഹം (sneham) — a gentle warmth', title:'Kerala — backwater calm, monsoon green,\na gopuram rising past the palms',
+      blurb:'Beneath the tall gopuram, oil lamps flicker in the monsoon air.',
+      verse:'അമ്പലത്തിന്റെ ഗോപുരത്തിന് താഴെ, കാറ്റിന്റെ മണികൾ മൃദുവായി മുഴങ്ങുന്നു. ഓരോ ശബ്ദവും ഒരു പഴയ കഥ പറയുന്നു. കൈ നീട്ടി കേൾക്കുക. ' },
+    { id:'mp', name:'Madhya Pradesh', badge:'🛕', font:"'Noto Sans Devanagari', sans-serif", roof:'dome', landscape:'river',
+      colors:['#4a4a5a','#8a8a9a','#c9962b'], sky:['#e9eef2','#cddbe6','#a9c2d6'], particleColor:'#3a3a4a',
+      scaleBase:246.9, scaleSteps:[0,2,4,5,7,9,11], timbre:'gong',
+      temple:'Mahakaleshwar Jyotirlinga, Ujjain',
+      tag:'काल (kaal) — time itself, made stone', title:'Madhya Pradesh — riverside ghats, ash-grey dawn,\na spire that keeps its own time',
+      blurb:'Bells and drums still mark the hours the way they always have.',
+      verse:'महाकाल के शिखर के नीचे, शिप्रा तट पर हवा की घंटियाँ बजती हैं। हर ध्वनि समय से पुरानी कहानी कहती है। हाथ बढ़ाकर सुनो। ' },
+    { id:'maharashtra', name:'Maharashtra', badge:'🛕', font:"'Noto Sans Devanagari', sans-serif", roof:'onion', landscape:'coast',
+      colors:['#a8792a','#7a5810','#f0d060'], sky:['#f0e4cf','#e0c495','#c39a63'], particleColor:'#5a2a1a',
+      scaleBase:277.2, scaleSteps:[0,2,4,7,9], timbre:'bell',
+      temple:'Siddhivinayak Temple, Mumbai',
+      tag:'श्रद्धा (shraddha) — a quiet faith', title:'Maharashtra — a coastal city, monsoon crowds,\na small golden dome everyone comes home to',
+      blurb:'Before any journey begins, this is where the city stops to ask permission.',
+      verse:'मंदिराच्या सोन्याच्या घुमटाखाली, वाऱ्याच्या घंटा हळू वाजतात. प्रत्येक आवाज एक जुनी गोष्ट सांगतो. हात पुढे करून ऐक. ' },
+    { id:'odisha', name:'Odisha', badge:'🛕', font:"'Noto Sans Oriya', sans-serif", roof:'dome', landscape:'coast',
+      colors:['#7a1620','#c9962b','#e0b545'], sky:['#e9eef2','#cddbe6','#a9c2d6'], particleColor:'#2a3a4a',
+      scaleBase:174.6, scaleSteps:[0,2,4,7,9], timbre:'bell',
+      temple:'Jagannath Temple, Puri',
+      tag:'ଭକ୍ତି (bhakti) — an offering of sound', title:'Odisha — temple chariots, coastal winds,\na spire watching over the eastern sea',
+      blurb:'Chariots and spires alike lean toward the sea each summer.',
+      verse:'ମନ୍ଦିର ଶିଖର ତଳେ, ପବନ ଘଣ୍ଟି ମୃଦୁ ସ୍ୱରରେ ବାଜେ। ପ୍ରତ୍ୟେକ ଧ୍ୱନି ଏକ ପୁରୁଣା କାହାଣୀ କୁହେ। ହାତ ବଢ଼ାଇ ଶୁଣ। ' },
+    { id:'punjab', name:'Punjab', badge:'🛕', font:"'Noto Sans Gurmukhi', sans-serif", roof:'onion', landscape:'lake',
+      colors:['#a8792a','#7a5810','#f0d060'], sky:['#dfe8dc','#bcd0b8','#8fae86'], particleColor:'#2a4a3a',
+      scaleBase:220, scaleSteps:[0,2,4,7,9], timbre:'crystal',
+      temple:'Golden Temple / Harmandir Sahib, Amritsar',
+      tag:'ਸੇਵਾ (seva) — selfless service', title:'Punjab — golden water, open kitchens,\na dome that never stops shining',
+      blurb:'Anyone may eat here, and everyone is called by the same name: guest.',
+      verse:'ਮੰਦਰ ਦੇ ਸਿਖਰ ਹੇਠ, ਹਵਾ ਦੀਆਂ ਘੰਟੀਆਂ ਹੌਲੀ ਹੌਲੀ ਵੱਜਦੀਆਂ ਹਨ। ਹਰ ਆਵਾਜ਼ ਇੱਕ ਪੁਰਾਣੀ ਕਹਾਣੀ ਸੁਣਾਉਂਦੀ ਹੈ। ਹੱਥ ਵਧਾ ਕੇ ਸੁਣੋ। ' },
+    { id:'rajasthan', name:'Rajasthan', badge:'🛕', font:"'Noto Sans Devanagari', sans-serif", roof:'dome', landscape:'desert',
+      colors:['#a8452e','#c9962b','#e8c07a'], sky:['#f3e0c0','#e6c088','#c98a52'], particleColor:'#6a3a1a',
+      scaleBase:261.6, scaleSteps:[0,2,4,7,9], timbre:'bell',
+      temple:'Brahma Temple, Pushkar',
+      tag:'रेत (ret) — sand that remembers', title:'Rajasthan — desert wind, a lake of pilgrims,\nthe one temple built for the world’s creator',
+      blurb:'There’s only one temple quite like it in the country, and the lake remembers why.',
+      verse:'पुष्कर की रेत और झील के बीच, हवा की घंटियाँ धीरे बजती हैं। हर ध्वनि एक पुरानी कहानी सुनाती है। हाथ बढ़ाकर सुनो। ' },
+    { id:'tamilnadu', name:'Tamil Nadu', badge:'🛕', font:"'Noto Sans Tamil', sans-serif", roof:'gopuram', landscape:'urban',
+      colors:['#8a2a1a','#c9962b','#e0b545'], sky:['#f5e6c0','#e8c98a','#c98a52'], particleColor:'#6a3a1a',
+      scaleBase:261.6, scaleSteps:[0,1,4,5,7,8,11], timbre:'bell',
+      temple:'Meenakshi Amman Temple, Madurai',
+      tag:'அன்பு (anbu) — a quiet affection', title:'Tamil Nadu — bronze-lit courtyards, temple tanks,\ngopurams stacked story upon story',
+      blurb:'Wander through gopuram gates carved with a thousand painted gods.',
+      verse:'கோவில் கோபுரத்தின் கீழே, காற்று மணிகள் மென்மையாக ஒலிக்கின்றன. ஒவ்வொரு ஒலியும் ஒரு பழைய கதையைச் சொல்கிறது. கையை நீட்டி கேளுங்கள். ' },
+    { id:'telangana', name:'Telangana', badge:'🛕', font:"'Noto Sans Telugu', sans-serif", roof:'gopuram', gopuramSquat:true, landscape:'lake',
+      colors:['#6a2a3a','#a8523a','#c9962b'], sky:['#eee0d0','#d9bfa0','#b89878'], particleColor:'#4a2a2a',
+      scaleBase:220, scaleSteps:[0,2,3,5,7,8,10], timbre:'gong',
+      temple:'Ramappa Temple, Mulugu',
+      tag:'నమ్మకం (nammakam) — a lasting faith', title:'Telangana — a lake at dawn, carved sandstone,\na temple low, wide, and unhurried',
+      blurb:'Every pillar here was carved to turn, and none of them repeat.',
+      verse:'రామప్ప సరస్సు తీరంలో, గాలి గంటలు మృదువుగా మోగుతాయి. ప్రతి శిల్పం ఒక పాత కథను చెబుతుంది. చేయి చాపి వినండి. ' },
+    { id:'up', name:'Uttar Pradesh', badge:'🛕', font:"'Noto Sans Devanagari', sans-serif", roof:'dome', landscape:'river',
+      colors:['#a8452e','#c9962b','#e0b545'], sky:['#eee3c8','#e2c98f','#c9a25a'], particleColor:'#6a3a1a',
+      scaleBase:261.6, scaleSteps:[0,2,4,5,7,9,11], timbre:'bell',
+      temple:'Kashi Vishwanath Temple, Varanasi',
+      tag:'आस्था (aastha) — a quiet faith', title:'Uttar Pradesh — riverside ghats, oil lamps,\na golden spire above the old city',
+      blurb:'Boatmen still sing beneath a spire that has never gone dark.',
+      verse:'मंदिर के शिखर के नीचे, हवा की घंटियाँ धीरे धीरे बजती हैं। हर ध्वनि एक पुरानी कहानी कहती है। हाथ बढ़ाकर सुनो। ' },
+    { id:'uttarakhand', name:'Uttarakhand', badge:'🛕', font:"'Noto Sans Devanagari', sans-serif", roof:'dome', landscape:'mountain',
+      colors:['#5a5a6a','#8a8a9a','#c9962b'], sky:['#eaf1f5','#cfe3ec','#9db8c9'], particleColor:'#2a3a4a',
+      scaleBase:196, scaleSteps:[0,2,3,5,7,8,10], timbre:'gong',
+      temple:'Kedarnath Temple, Rudraprayag',
+      tag:'यात्रा (yatra) — a pilgrim’s climb', title:'Uttarakhand — glacier air, stone steps,\na shrine that closes each year with the snow',
+      blurb:'For six months the mountain keeps the temple to itself.',
+      verse:'केदार के हिमशिखरों के नीचे, हवा की घंटियाँ ठंडी हवा में बजती हैं। हर ध्वनि एक पुरानी यात्रा की कहानी कहती है। हाथ बढ़ाकर सुनो। ' },
+    { id:'westbengal', name:'West Bengal', badge:'🛕', font:"'Noto Sans Bengali', sans-serif", roof:'pagoda', landscape:'river',
+      colors:['#8a1c1c','#3a4a5a','#c9962b'], sky:['#e6e9ee','#c7cfdb','#9fabc0'], particleColor:'#3a3a4a',
+      scaleBase:233, scaleSteps:[0,2,3,5,7,8,10], timbre:'wood',
+      temple:'Dakshineswar Kali Temple, Kolkata',
+      tag:'মায়া (maya) — a gentle illusion', title:'West Bengal — river ghats, incense smoke,\nnine small spires against a grey sky',
+      blurb:'Nine small towers keep watch over the river’s slow current.',
+      verse:'মন্দিরের চূড়ার নিচে, বাতাসের ঘণ্টা মৃদু স্বরে বাজে। প্রতিটি ধ্বনি একটি পুরনো গল্প বলে। হাত বাড়িয়ে শোনো। ' },
+  ];
+  let country = COUNTRIES[0]; // Andhra Pradesh
+  let countryIndex = 0;
+
+  // ================= canvas / DOM =================
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const cursorDot = document.getElementById('cursorDot');
+  const startHint = document.getElementById('startHint');
+  let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  function resize() {
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', () => { resize(); buildCloth(); });
+  resize();
+
+  // ================= audio =================
+  let audioCtx = null, masterGain = null, dryGain = null, reverbGain = null, muted = false;
+  let recentStrikes = 0;
+  let chimesOn = true, chimeVolume = 0.28;
+
+  function makeImpulseResponse(ac, duration, decay) {
+    const rate = ac.sampleRate;
+    const length = Math.max(1, Math.floor(rate * duration));
+    const impulse = ac.createBuffer(2, length, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const data = impulse.getChannelData(ch);
+      for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+    }
+    return impulse;
+  }
+  function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain(); masterGain.gain.value = 0.9; masterGain.connect(audioCtx.destination);
+    dryGain = audioCtx.createGain(); dryGain.gain.value = 0.75; dryGain.connect(masterGain);
+    const convolver = audioCtx.createConvolver();
+    convolver.buffer = makeImpulseResponse(audioCtx, 2.8, 2.6);
+    reverbGain = audioCtx.createGain(); reverbGain.gain.value = 0.55; reverbGain.connect(convolver);
+    convolver.connect(masterGain);
+  }
+  // each country's chime is voiced with one of these timbres, giving it a distinct character
+  const TIMBRES = {
+    bell: [
+      { ratio: 1.00, amp: 1.00, decay: 1.8 }, { ratio: 2.76, amp: 0.42, decay: 1.2 },
+      { ratio: 4.10, amp: 0.22, decay: 0.8 }, { ratio: 5.6, amp: 0.10, decay: 0.5 },
+    ],
+    gong: [ // lower, darker, more inharmonic, longer resonance — onion-dome countries
+      { ratio: 1.00, amp: 1.00, decay: 2.7 }, { ratio: 1.98, amp: 0.5, decay: 2.1 },
+      { ratio: 3.2, amp: 0.3, decay: 1.5 }, { ratio: 4.4, amp: 0.18, decay: 1.05 }, { ratio: 5.8, amp: 0.1, decay: 0.75 },
+    ],
+    wood: [ // short, percussive, few partials — bamboo/timber chimes
+      { ratio: 1.00, amp: 1.00, decay: 0.4 }, { ratio: 2.4, amp: 0.35, decay: 0.24 }, { ratio: 4.1, amp: 0.15, decay: 0.14 },
+    ],
+    crystal: [ // bright, longer high shimmer — glass garden chimes
+      { ratio: 1.00, amp: 0.8, decay: 1.7 }, { ratio: 2.00, amp: 0.5, decay: 2.0 },
+      { ratio: 3.98, amp: 0.35, decay: 1.6 }, { ratio: 6.0, amp: 0.22, decay: 1.15 }, { ratio: 8.0, amp: 0.12, decay: 0.85 },
+    ],
+  };
+  function playChime(freq, velocity, pan, timbreKey) {
+    if (!audioCtx || muted || !chimesOn) return;
+    if (recentStrikes > 14) return;
+    recentStrikes++; setTimeout(() => { recentStrikes--; }, 200);
+    const now = audioCtx.currentTime;
+    const vel = Math.min(1, Math.max(0.08, velocity)) * chimeVolume * 3.2;
+    const partials = TIMBRES[timbreKey] || TIMBRES.bell;
+    const bus = audioCtx.createGain(); bus.gain.value = 1;
+    const panner = audioCtx.createStereoPanner(); panner.pan.value = Math.max(-1, Math.min(1, pan || 0));
+    bus.connect(panner); panner.connect(dryGain); panner.connect(reverbGain);
+    partials.forEach(p => {
+      const osc = audioCtx.createOscillator(); osc.type = 'sine'; osc.frequency.value = freq * p.ratio;
+      const g = audioCtx.createGain();
+      const peak = p.amp * vel * 0.3;
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(peak, now + 0.005);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * 0.001), now + p.decay);
+      osc.connect(g); g.connect(bus); osc.start(now); osc.stop(now + p.decay + 0.5);
+    });
+  }
+  function computeNoteFreqs(c) {
+    const freqs = [];
+    for (let oct = 0; oct < 3; oct++) c.scaleSteps.forEach(s => freqs.push(c.scaleBase * Math.pow(2, (oct * 12 + s) / 12)));
+    return freqs;
+  }
+  let currentNoteFreqs = [];
+
+  function unlockAudio() {
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    startHint.style.opacity = '0';
+  }
+  // Web Audio can only start on a real user gesture (click/tap) — plain cursor movement
+  // never counts, so without this gate someone who never clicks would wave the cursor
+  // through the cloth and hear nothing at all, with no clue why. This makes the click
+  // unmissable instead of relying on a small hint text easy to miss.
+  const startGate = document.getElementById('startGate');
+  function dismissStartGate() {
+    unlockAudio();
+    startGate.style.opacity = '0';
+    setTimeout(() => { startGate.style.display = 'none'; }, 650);
+  }
+  startGate.addEventListener('click', dismissStartGate);
+  startGate.addEventListener('touchstart', dismissStartGate, { passive: true });
+
+  // ================= cloth simulation (Verlet grid, pinned to the roof beam) =================
+  let COLS = 40, ROWS = 34;
+  let GRAVITY = 0.22, DAMPING = 0.99, PRECISION = 5, STRETCH = 1.10, COMPRESS = 0.06;
+  let TOUCH_RADIUS = 72, TOUCH_FORCE = 4.2, KEEP_BOUNDS = true;
+  // with the current touch force + damping, particle speed plateaus around ~2.2 no
+  // matter how vigorously you move — measured directly, it never goes higher. The old
+  // threshold of 2.6 was above that ceiling, so chimes almost never fired in practice.
+  const STRIKE_SPEED = 1.2;
+
+  let particles = [];
+  let colSpacing = 0, rowSpacing = 0;
+  let beamY = 0, clothLeft = 0, clothWidth = 0, clothHeight = 0;
+  let boundsPad = 140;
+  const colFlash = [], colCooldown = [];
+
+  // Dakshineswar prototype state — declared here (before buildCloth, which triggers
+  // buildBengalChimes) since `let`/`const` aren't usable before their own declaration runs.
+  // The real photo already has the temple, flags, and people in it — this page only adds
+  // an interactive chime row, aligned to the beam line where the real ones hang in-shot.
+  const BENGAL_SEGMENTS = 4;
+  let bengalChimes = [];
+  const bgImage = new Image();
+  let bgImageReady = false;
+  bgImage.onload = () => { bgImageReady = true; buildBengalChimes(); };
+  bgImage.src = 'assets/dakshineswar-web.jpg';
+  // beam-line endpoints estimated from the photo, in image-relative (0..1) fractions
+  const BEAM_P1 = { xf: 0.431, yf: 0.271 };
+  const BEAM_P2 = { xf: 0.988, yf: 0.421 };
+
+  function coverFit(imgW, imgH, boxW, boxH) {
+    const scale = Math.max(boxW / imgW, boxH / imgH);
+    const drawW = imgW * scale, drawH = imgH * scale;
+    return { scale, drawW, drawH, offsetX: (boxW - drawW) / 2, offsetY: (boxH - drawH) / 2 };
+  }
+
+  function idx(c, r) { return r * COLS + c; }
+
+  function buildCloth(customW, customH) {
+    beamY = H * 0.235;
+    clothWidth = customW || Math.min(W * 0.86, 920);
+    clothLeft = W / 2 - clothWidth / 2;
+    clothHeight = customH || Math.max(H * 0.5, H - beamY - Math.min(30, H * 0.03));
+    colSpacing = clothWidth / (COLS - 1);
+    rowSpacing = clothHeight / (ROWS - 1);
+
+    particles = new Array(COLS * ROWS);
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const x = clothLeft + c * colSpacing;
+        const y = beamY + r * rowSpacing;
+        particles[idx(c, r)] = { x, y, ox: x, oy: y, pinned: r === 0 };
+      }
+    }
+    colFlash.length = 0; colCooldown.length = 0;
+    for (let c = 0; c < COLS; c++) { colFlash.push(0); colCooldown.push(-10); }
+    buildBengalChimes();
+  }
+  buildCloth();
+
+  // ================= cursor tracking =================
+  let mouseX = -9999, mouseY = -9999, hasMouse = false;
+  function onPointerMove(clientX, clientY) {
+    mouseX = clientX; mouseY = clientY; hasMouse = true;
+    cursorDot.style.left = clientX + 'px'; cursorDot.style.top = clientY + 'px';
+  }
+  window.addEventListener('mousemove', e => onPointerMove(e.clientX, e.clientY));
+  window.addEventListener('touchmove', e => { if (e.touches[0]) onPointerMove(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+  window.addEventListener('mouseleave', () => { hasMouse = false; });
+
+  // ================= physics step (classic Verlet cloth: weak on compression, firm on stretch) =================
+  let t = 0, lastTime = null;
+
+  function satisfyConstraint(a, b, rest) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+    const diff = (rest - dist) / dist;          // >0 compressed, <0 stretched
+    const stiffness = diff > 0 ? COMPRESS : STRETCH;
+    const ox = dx * diff * 0.5 * stiffness, oy = dy * diff * 0.5 * stiffness;
+    if (!a.pinned) { a.x -= ox; a.y -= oy; }
+    if (!b.pinned) { b.x += ox; b.y += oy; }
+  }
+
+  function step(dt) {
+    t += dt;
+    if (country.id === 'westbengal') { stepBengalChimes(dt); return; }
+    // normalize every time-dependent term to a 1/60s reference frame — without this,
+    // gravity/damping/touch-force all scale directly with however long the last frame
+    // took, so any jitter in real frame timing shows up directly as jittery motion.
+    // clamped so a long pause (tab hidden, GC stall) doesn't inject a huge kick on resume.
+    const dtScale = Math.min(2, Math.max(0.2, dt * 60));
+    const dampFactor = Math.pow(DAMPING, dtScale);
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      if (p.pinned) continue;
+      let ax = 0, ay = GRAVITY * dtScale;
+      if (hasMouse) {
+        const dx = p.x - mouseX, dy = p.y - mouseY;
+        const dist2 = dx * dx + dy * dy;
+        if (dist2 < TOUCH_RADIUS * TOUCH_RADIUS && dist2 > 1) {
+          const dist = Math.sqrt(dist2);
+          const proximity = 1 - dist / TOUCH_RADIUS;
+          const force = proximity * proximity * TOUCH_FORCE * dtScale;
+          ax += (dx / dist) * force; ay += (dy / dist) * force;
+        }
+      }
+      const vx = (p.x - p.ox) * dampFactor, vy = (p.y - p.oy) * dampFactor;
+      p.ox = p.x; p.oy = p.y;
+      p.x += vx + ax; p.y += vy + ay;
+
+      if (KEEP_BOUNDS) {
+        p.x = Math.max(clothLeft - boundsPad, Math.min(clothLeft + clothWidth + boundsPad, p.x));
+        p.y = Math.max(beamY - 10, Math.min(beamY + clothHeight + boundsPad, p.y));
+      }
+    }
+
+    for (let iter = 0; iter < PRECISION; iter++) {
+      for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS - 1; c++) satisfyConstraint(particles[idx(c, r)], particles[idx(c + 1, r)], colSpacing);
+      for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS - 1; r++) satisfyConstraint(particles[idx(c, r)], particles[idx(c, r + 1)], rowSpacing);
+    }
+
+    for (let c = 0; c < COLS; c++) {
+      let maxSpeed = 0;
+      for (let r = 1; r < ROWS; r++) {
+        const p = particles[idx(c, r)];
+        const sp = Math.hypot(p.x - p.ox, p.y - p.oy) / dtScale; // normalized back to per-reference-frame speed
+        if (sp > maxSpeed) maxSpeed = sp;
+      }
+      if (maxSpeed > STRIKE_SPEED && t - colCooldown[c] > 0.16) {
+        colCooldown[c] = t; colFlash[c] = 1;
+        const noteIdx = Math.floor((c / (COLS - 1)) * (currentNoteFreqs.length - 0.001));
+        const pan = (c / (COLS - 1)) * 2 - 1;
+        // maxSpeed realistically ranges ~1.2-2.2, not the 0-10 this used to assume,
+        // so that old scaling made every chime play back near-silently even at the max
+        playChime(currentNoteFreqs[noteIdx], Math.min(1, maxSpeed / 2.2), pan, country.timbre);
+      }
+      colFlash[c] *= 0.9;
+    }
+  }
+
+  // ================= background (sky + terrain + ambient tint all change with the state) =================
+  function drawBackground() {
+    const [s1, s2, s3] = country.sky;
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, s1); sky.addColorStop(0.5, s2); sky.addColorStop(1, s3);
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    for (let i = 0; i < 80; i++) {
+      const sx = (i * 83.7) % W, sy = (i * 47.3) % H;
+      ctx.globalAlpha = 0.04 + 0.03 * Math.abs(Math.sin(i));
+      ctx.fillStyle = country.particleColor;
+      ctx.beginPath(); ctx.arc(sx, sy, 1, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    drawLandscape(country.landscape);
+  }
+
+  // terrain silhouette filling the sky zone (0..beamY), behind where the temple tower will be
+  // drawn next — so it reads as real geography the temple stands in front of. Everything here
+  // is anchored to a horizon line just above the gate, extending UPWARD into the sky, never
+  // below it (below the gate is the cloth/passage, not outdoor terrain).
+  function drawLandscape(type) {
+    const horizon = beamY - 6;
+    ctx.save();
+    if (type === 'mountain') {
+      for (let layer = 0; layer < 2; layer++) {
+        const baseY = horizon - layer * 20;
+        const amp = 70 + layer * 40;
+        ctx.beginPath();
+        ctx.moveTo(0, baseY);
+        for (let x = 0; x <= W; x += W / 10) {
+          ctx.lineTo(x, baseY - amp * Math.abs(Math.sin(x * 0.011 + layer * 2.3)));
+        }
+        ctx.lineTo(W, baseY);
+        ctx.closePath();
+        ctx.fillStyle = layer === 0 ? 'rgba(120,135,155,0.55)' : 'rgba(90,105,130,0.45)';
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        for (let x = 0; x <= W; x += W / 10) {
+          const py = baseY - amp * Math.abs(Math.sin(x * 0.011 + layer * 2.3));
+          if (amp * Math.abs(Math.sin(x * 0.011 + layer * 2.3)) > 35) { ctx.beginPath(); ctx.arc(x, py + 8, 7, 0, Math.PI * 2); ctx.fill(); }
+        }
+      }
+    } else if (type === 'coast') {
+      const g = ctx.createLinearGradient(0, horizon - 70, 0, horizon);
+      g.addColorStop(0, 'rgba(80,115,140,0.3)'); g.addColorStop(1, 'rgba(110,145,165,0.45)');
+      ctx.fillStyle = g; ctx.fillRect(0, horizon - 70, W, 70);
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1;
+      for (let i = 0; i < 5; i++) {
+        const ly = horizon - 56 + i * 12;
+        ctx.beginPath(); ctx.moveTo(0, ly);
+        for (let x = 0; x <= W; x += 20) ctx.lineTo(x, ly + Math.sin(x * 0.05 + i) * 2);
+        ctx.stroke();
+      }
+    } else if (type === 'river') {
+      ctx.fillStyle = 'rgba(120,150,165,0.4)';
+      ctx.fillRect(0, horizon - 38, W, 30);
+      const cx = W / 2, half = Math.min(clothWidth / 2 + 60, W * 0.42);
+      for (let i = 0; i < 5; i++) {
+        const gw = half * 2 * (1 - i * 0.14);
+        ctx.fillStyle = `rgba(90,70,55,${0.3 - i * 0.03})`;
+        ctx.fillRect(cx - gw / 2, horizon - 8 - i * 5, gw, 4);
+      }
+    } else if (type === 'desert') {
+      for (let layer = 0; layer < 2; layer++) {
+        const baseY = horizon - layer * 12;
+        ctx.beginPath(); ctx.moveTo(0, baseY);
+        for (let x = 0; x <= W; x += W / 12) ctx.lineTo(x, baseY - 30 * Math.abs(Math.sin(x * 0.02 + layer)));
+        ctx.lineTo(W, baseY); ctx.closePath();
+        ctx.fillStyle = layer === 0 ? 'rgba(200,160,100,0.45)' : 'rgba(170,130,80,0.4)';
+        ctx.fill();
+      }
+    } else if (type === 'hills') {
+      for (let i = 0; i < 4; i++) {
+        const hx = (W / 4) * i + W / 8;
+        const hr = 70 + (i % 2) * 24;
+        ctx.beginPath(); ctx.ellipse(hx, horizon, hr, hr * 0.7, 0, Math.PI, 0);
+        ctx.fillStyle = `rgba(110,95,65,${0.35 - (i % 2) * 0.05})`;
+        ctx.fill();
+      }
+    } else if (type === 'urban') {
+      ctx.fillStyle = 'rgba(90,80,70,0.32)';
+      let x = 0;
+      while (x < W) {
+        const w = 20 + (x % 47);
+        const h = 24 + (x % 70);
+        ctx.fillRect(x, horizon - h, w, h);
+        x += w + 6;
+      }
+    } else if (type === 'lake') {
+      const g = ctx.createLinearGradient(0, horizon - 40, 0, horizon);
+      g.addColorStop(0, 'rgba(100,135,125,0.3)'); g.addColorStop(1, 'rgba(130,160,150,0.45)');
+      ctx.fillStyle = g; ctx.fillRect(0, horizon - 40, W, 40);
+    } else if (type === 'plains') {
+      ctx.fillStyle = 'rgba(130,150,100,0.35)';
+      ctx.fillRect(0, horizon - 16, W, 16);
+      const tx = W * 0.16;
+      ctx.strokeStyle = 'rgba(80,60,30,0.45)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(tx, horizon - 16); ctx.lineTo(tx, horizon - 52); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(tx, horizon - 60, 22, 16, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(70,95,55,0.5)'; ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ================= roof styles =================
+  function drawPagoda(cx, palette, beamHalf) {
+    const [c1, c2, c3] = palette;
+    const tierGap = 46;
+    let topY = beamY - 20;
+    for (let tier = 0; tier < 2; tier++) {
+      const tw = beamHalf * (1 - tier * 0.24);
+      const th = 22;
+      const ty = topY - tier * tierGap;
+      ctx.save();
+      ctx.translate(cx, ty);
+      // main roof slab — ridge highest at the center, sloping down toward the eaves
+      ctx.beginPath();
+      ctx.moveTo(-tw * 0.9, th);
+      ctx.quadraticCurveTo(0, -th * 0.9, tw * 0.9, th);
+      ctx.lineTo(tw * 0.82, th + 9);
+      ctx.quadraticCurveTo(0, th * 0.35, -tw * 0.82, th + 9);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(-tw, -th, tw, th);
+      grad.addColorStop(0, c1); grad.addColorStop(0.5, c3); grad.addColorStop(1, c1);
+      ctx.fillStyle = grad; ctx.fill();
+      ctx.strokeStyle = c2; ctx.lineWidth = 1.3; ctx.stroke();
+
+      // upturned eave flicks at both corners
+      [-1, 1].forEach(side => {
+        ctx.beginPath();
+        ctx.moveTo(side * tw * 0.82, th + 6);
+        ctx.quadraticCurveTo(side * (tw * 0.82 + 16), th - 6, side * (tw * 0.82 + 20), th - 26);
+        ctx.lineTo(side * (tw * 0.82 + 8), th - 18);
+        ctx.quadraticCurveTo(side * (tw * 0.82 + 4), th - 2, side * tw * 0.7, th + 3);
+        ctx.closePath();
+        ctx.fillStyle = c1;
+        ctx.fill();
+        ctx.strokeStyle = c2; ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+      ctx.restore();
+    }
+    ctx.save();
+    ctx.translate(cx, topY - tierGap - 22);
+    ctx.fillStyle = c3;
+    ctx.fillRect(-1.5, -22, 3, 22);
+    ctx.beginPath(); ctx.arc(0, -24, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawDome(cx, palette, beamHalf) {
+    const [c1, c2, c3] = palette;
+    const spireW = Math.min(beamHalf * 0.9, 190);
+    const spireH = beamY * 0.82;
+    ctx.save(); ctx.translate(cx, beamY);
+    const grad = ctx.createLinearGradient(-spireW / 2, -spireH, spireW / 2, 0);
+    grad.addColorStop(0, c1); grad.addColorStop(0.5, c3); grad.addColorStop(1, c2);
+    ctx.beginPath();
+    ctx.moveTo(0, -spireH);
+    ctx.bezierCurveTo(spireW * 0.5, -spireH * 0.7, spireW * 0.42, -spireH * 0.2, spireW * 0.5, 0);
+    ctx.lineTo(-spireW * 0.5, 0);
+    ctx.bezierCurveTo(-spireW * 0.42, -spireH * 0.2, -spireW * 0.5, -spireH * 0.7, 0, -spireH);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1.2; ctx.stroke();
+    for (let k = 1; k <= 4; k++) {
+      const ry = -spireH * (k / 5), rw = spireW * (0.24 + 0.1 * (1 - k / 5));
+      ctx.beginPath(); ctx.ellipse(0, ry, rw, rw * 0.18, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+    ctx.beginPath(); ctx.ellipse(0, -spireH - 10, 7, 10, 0, 0, Math.PI * 2); ctx.fillStyle = c3; ctx.fill();
+    ctx.restore();
+  }
+
+  // South Indian temple gateway tower — many shrinking tiers stacked straight on top of
+  // one another, each lined with small finials, capped with a rounded vaulted crown.
+  function drawGopuram(cx, palette, beamHalf, squat) {
+    const [c1, c2, c3] = palette;
+    // Kakatiya-style temples (Ramappa) have a low, wide, unhurried profile rather than
+    // a tall Dravidian tower — fewer levels, shorter each, spread wider.
+    const levels = squat ? 3 : 6;
+    let curW = Math.min(beamHalf * (squat ? 1.15 : 0.92), squat ? 260 : 220);
+    const totalH = beamY * (squat ? 0.5 : 0.86);
+    const stepH = totalH / (levels + 1.4);
+    let y = beamY - 4;
+    let topW = curW;
+    const finials = []; // drawn in a final pass so the next (narrower) tier never paints over them
+
+    for (let i = 0; i < levels; i++) {
+      const w = curW * Math.pow(0.82, i);
+      const h = stepH * (1 - i * 0.05);
+      const topEdgeW = w * 0.62; // each tier steps in well past where the next tier's base starts
+      ctx.save();
+      ctx.translate(cx, y);
+      ctx.beginPath();
+      ctx.moveTo(-w / 2, 2);
+      ctx.lineTo(w / 2, 2);
+      ctx.lineTo(topEdgeW / 2, -h);
+      ctx.lineTo(-topEdgeW / 2, -h);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(-w / 2, -h, w / 2, 2);
+      grad.addColorStop(0, c1); grad.addColorStop(0.5, c3); grad.addColorStop(1, c1);
+      ctx.fillStyle = grad; ctx.fill();
+      ctx.strokeStyle = c2; ctx.lineWidth = 1; ctx.stroke();
+      ctx.restore();
+
+      const finCount = Math.max(3, levels - i + 2);
+      for (let k = 0; k < finCount; k++) {
+        const fx = cx - w / 2 + (k + 0.5) * (w / finCount);
+        finials.push({ x: fx, y: y - h });
+      }
+      y -= h;
+      topW = w * 0.82; // next tier's base — deliberately wider than topEdgeW, leaving a visible ledge
+    }
+
+    // rounded vaulted crown with small kalasha finials
+    ctx.save();
+    ctx.translate(cx, y);
+    ctx.beginPath();
+    ctx.moveTo(-topW / 2, 4);
+    ctx.quadraticCurveTo(0, -topW * 0.6, topW / 2, 4);
+    ctx.closePath();
+    ctx.fillStyle = c3; ctx.fill();
+    ctx.strokeStyle = c2; ctx.lineWidth = 1; ctx.stroke();
+    [-1, 0, 1].forEach(k => {
+      ctx.beginPath();
+      ctx.arc(k * topW * 0.28, -topW * 0.42, 3.4, 0, Math.PI * 2);
+      ctx.fillStyle = c3; ctx.fill();
+    });
+    ctx.restore();
+
+    // finials on top of every tier ledge, drawn last so nothing covers them
+    finials.forEach(f => {
+      ctx.beginPath();
+      ctx.moveTo(f.x - 3.5, f.y);
+      ctx.lineTo(f.x, f.y - 8);
+      ctx.lineTo(f.x + 3.5, f.y);
+      ctx.closePath();
+      ctx.fillStyle = c3;
+      ctx.fill();
+      ctx.strokeStyle = c2; ctx.lineWidth = 0.6;
+      ctx.stroke();
+    });
+  }
+
+  // Mahabodhi Temple, Bodh Gaya — a tall, straight-sided stepped tower (not curved like a
+  // shikhara), banded in horizontal tiers, topped with a small stupa-like finial.
+  function drawPyramid(cx, palette, beamHalf) {
+    const [c1, c2, c3] = palette;
+    const w = Math.min(beamHalf * 0.5, 110);
+    const h = beamY * 0.86;
+    ctx.save(); ctx.translate(cx, beamY);
+    const grad = ctx.createLinearGradient(-w / 2, -h, w / 2, 0);
+    grad.addColorStop(0, c1); grad.addColorStop(0.5, c3); grad.addColorStop(1, c1);
+    ctx.beginPath();
+    ctx.moveTo(-w / 2, 2); ctx.lineTo(w / 2, 2); ctx.lineTo(w * 0.2, -h); ctx.lineTo(-w * 0.2, -h);
+    ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+    ctx.strokeStyle = c2; ctx.lineWidth = 1; ctx.stroke();
+    for (let k = 1; k <= 6; k++) {
+      const by = -h * (k / 7);
+      const bw = (w / 2) * (1 - (k / 7) * 0.78);
+      ctx.beginPath(); ctx.moveTo(-bw, by); ctx.lineTo(bw, by);
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 1; ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(0, -h - 6, 6, 0, Math.PI * 2); ctx.fillStyle = c3; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(-2, -h - 12); ctx.lineTo(2, -h - 12); ctx.lineTo(0, -h - 24); ctx.closePath();
+    ctx.fillStyle = c3; ctx.fill();
+    ctx.restore();
+  }
+
+  // Akshardham, Delhi — a wide cluster of small carved domes rather than one tall tower.
+  function drawMultiDome(cx, palette, beamHalf) {
+    const [c1, c2, c3] = palette;
+    const positions = [-1, -0.5, 0, 0.5, 1];
+    positions.forEach((p, idx) => {
+      const isCenter = idx === 2;
+      const domeW = isCenter ? 62 : 40;
+      const domeH = isCenter ? beamY * 0.5 : beamY * 0.3;
+      const dx = p * Math.min(beamHalf * 0.55, 120);
+      ctx.save();
+      ctx.translate(cx + dx, beamY - (isCenter ? 0 : 6));
+      const grad = ctx.createLinearGradient(-domeW / 2, -domeH, domeW / 2, 0);
+      grad.addColorStop(0, c1); grad.addColorStop(0.5, c3); grad.addColorStop(1, c1);
+      ctx.beginPath();
+      ctx.moveTo(-domeW * 0.32, 2);
+      ctx.quadraticCurveTo(-domeW * 0.32, -domeH, 0, -domeH);
+      ctx.quadraticCurveTo(domeW * 0.32, -domeH, domeW * 0.32, 2);
+      ctx.closePath();
+      ctx.fillStyle = grad; ctx.fill();
+      ctx.strokeStyle = c2; ctx.lineWidth = 1; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-2, -domeH); ctx.lineTo(2, -domeH); ctx.lineTo(0, -domeH - 9); ctx.closePath();
+      ctx.fillStyle = c3; ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  // Vaishno Devi, Katra — a rock-cut mountain shrine with an arched cave mouth, not a
+  // built tower at all; a small prayer flag marks the summit above the cave.
+  function drawCave(cx, palette, beamHalf) {
+    const [c1, c2, c3] = palette;
+    const w = Math.min(beamHalf * 0.95, 220), h = beamY * 0.58;
+    ctx.save(); ctx.translate(cx, beamY);
+    const grad = ctx.createLinearGradient(0, -h, 0, 4);
+    grad.addColorStop(0, c2); grad.addColorStop(1, c1);
+    ctx.beginPath();
+    ctx.moveTo(-w / 2, 4);
+    ctx.quadraticCurveTo(-w * 0.3, -h * 1.05, 0, -h);
+    ctx.quadraticCurveTo(w * 0.3, -h * 1.05, w / 2, 4);
+    ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1.2; ctx.stroke();
+    const mouthR = Math.min(w * 0.16, 34);
+    ctx.beginPath();
+    ctx.arc(0, -2, mouthR, Math.PI, 0);
+    ctx.lineTo(mouthR, 4); ctx.lineTo(-mouthR, 4);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(20,15,10,0.75)'; ctx.fill();
+    ctx.strokeStyle = c3; ctx.lineWidth = 2; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -h); ctx.lineTo(0, -h - 18);
+    ctx.strokeStyle = c3; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -h - 18); ctx.lineTo(11, -h - 12); ctx.lineTo(0, -h - 6); ctx.closePath();
+    ctx.fillStyle = c3; ctx.fill();
+    ctx.restore();
+  }
+
+  // the gate itself — two stone pillars framing the whole cloth, so the chimes read as
+  // hanging inside a temple entrance rather than floating below a roof
+  function drawGatePillars() {
+    const cx = W / 2;
+    const beamHalf = clothWidth / 2 + 26;
+    const pillarW = 22;
+    const top = beamY - 4;
+    const bottom = Math.min(H - 14, beamY + clothHeight + 30);
+    const [, , c3] = country.colors;
+    [-1, 1].forEach(side => {
+      const px = cx + side * (beamHalf + pillarW / 2 + 8);
+      ctx.save();
+      ctx.fillStyle = '#8a7a68';
+      ctx.beginPath(); ctx.roundRect(px - pillarW / 2 - 7, top - 15, pillarW + 14, 17, 3); ctx.fill();
+      const grad = ctx.createLinearGradient(px - pillarW / 2, 0, px + pillarW / 2, 0);
+      grad.addColorStop(0, '#7a6a58'); grad.addColorStop(0.5, '#c2b09a'); grad.addColorStop(1, '#7a6a58');
+      ctx.fillStyle = grad;
+      ctx.fillRect(px - pillarW / 2, top, pillarW, bottom - top);
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 1;
+      for (let y = top + 34; y < bottom - 24; y += 50) {
+        ctx.beginPath(); ctx.moveTo(px - pillarW / 2, y); ctx.lineTo(px + pillarW / 2, y); ctx.stroke();
+      }
+      ctx.fillStyle = c3;
+      ctx.fillRect(px - 2, top + 4, 4, Math.max(0, bottom - top - 8));
+      ctx.fillStyle = '#7a6a58';
+      ctx.beginPath(); ctx.roundRect(px - pillarW / 2 - 7, bottom - 3, pillarW + 14, 17, 3); ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  function drawOnion(cx, palette, beamHalf) {
+    const [c1, c2, c3] = palette;
+    const w = Math.min(beamHalf * 0.7, 150), h = beamY * 0.78;
+    ctx.save(); ctx.translate(cx, beamY);
+    const grad = ctx.createLinearGradient(-w / 2, -h, w / 2, 0);
+    grad.addColorStop(0, c3); grad.addColorStop(0.55, c1); grad.addColorStop(1, c2);
+    ctx.beginPath();
+    ctx.moveTo(0, -h);
+    ctx.bezierCurveTo(w * 0.75, -h * 0.75, w * 0.62, -h * 0.28, w * 0.28, -h * 0.1);
+    ctx.lineTo(w * 0.28, 0); ctx.lineTo(-w * 0.28, 0); ctx.lineTo(-w * 0.28, -h * 0.1);
+    ctx.bezierCurveTo(-w * 0.62, -h * 0.28, -w * 0.75, -h * 0.75, 0, -h);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1.2; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-3, -h); ctx.lineTo(3, -h); ctx.lineTo(0, -h - 22); ctx.closePath();
+    ctx.fillStyle = c3; ctx.fill();
+    ctx.restore();
+  }
+
+  function drawGable(cx, palette, beamHalf) {
+    const [c1, c2, c3] = palette;
+    const w = Math.min(beamHalf * 1.1, 260), h = beamY * 0.62;
+    ctx.save(); ctx.translate(cx, beamY);
+    const grad = ctx.createLinearGradient(-w / 2, -h, w / 2, 0);
+    grad.addColorStop(0, c1); grad.addColorStop(0.5, c3); grad.addColorStop(1, c1);
+    ctx.beginPath();
+    ctx.moveTo(-w / 2, 4); ctx.lineTo(0, -h); ctx.lineTo(w / 2, 4);
+    ctx.lineTo(w / 2 - 10, 4); ctx.lineTo(0, -h + 16); ctx.lineTo(-w / 2 + 10, 4);
+    ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+    ctx.strokeStyle = c2; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.fillStyle = c2;
+    ctx.fillRect(w * 0.22, -h * 0.55, 10, h * 0.4);
+    ctx.restore();
+  }
+
+  function drawRoof() {
+    const cx = W / 2, beamHalf = clothWidth / 2 + 26;
+
+    // pillars first, so the tower and beam visually rest on top of them
+    drawGatePillars();
+
+    if (country.roof === 'pagoda') drawPagoda(cx, country.colors, beamHalf);
+    else if (country.roof === 'dome') drawDome(cx, country.colors, beamHalf);
+    else if (country.roof === 'gopuram') drawGopuram(cx, country.colors, beamHalf, country.gopuramSquat);
+    else if (country.roof === 'onion') drawOnion(cx, country.colors, beamHalf);
+    else if (country.roof === 'pyramid') drawPyramid(cx, country.colors, beamHalf);
+    else if (country.roof === 'multidome') drawMultiDome(cx, country.colors, beamHalf);
+    else if (country.roof === 'cave') drawCave(cx, country.colors, beamHalf);
+    else drawGable(cx, country.colors, beamHalf);
+
+    // the beam the cloth hangs from
+    ctx.save();
+    ctx.shadowColor = 'rgba(60,30,10,0.35)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 7;
+    const beamGrad = ctx.createLinearGradient(cx - beamHalf, beamY - 9, cx + beamHalf, beamY + 6);
+    beamGrad.addColorStop(0, '#8a5a2b'); beamGrad.addColorStop(0.5, '#c9962b'); beamGrad.addColorStop(1, '#8a5a2b');
+    ctx.fillStyle = beamGrad;
+    ctx.beginPath(); ctx.roundRect(cx - beamHalf, beamY - 8, beamHalf * 2, 14, 4); ctx.fill();
+    ctx.restore();
+
+    ctx.strokeStyle = 'rgba(90,45,20,0.4)'; ctx.lineWidth = 1.1;
+    const archCount = Math.round((beamHalf * 2) / 26);
+    for (let k = 0; k < archCount; k++) {
+      const ax = cx - beamHalf + (k + 0.5) * (beamHalf * 2 / archCount);
+      ctx.beginPath(); ctx.arc(ax, beamY + 6, 7, Math.PI, 0); ctx.stroke();
+    }
+  }
+
+  // ================= the cloth of letters =================
+  function drawCloth() {
+    const fontSize = Math.min(colSpacing, rowSpacing) * 1.05;
+    ctx.font = `${fontSize}px ${country.font}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const verse = country.verse;
+    for (let c = 0; c < COLS; c++) {
+      const flash = colFlash[c];
+      const light = 26 + flash * 48;
+      ctx.fillStyle = flash > 0.04 ? `hsl(32, 75%, ${light}%)` : `hsl(24, 34%, ${24 + (c % 3) * 3}%)`;
+      for (let r = 1; r < ROWS; r++) {
+        const p = particles[idx(c, r)];
+        const ch = verse[(r * COLS + c) % verse.length];
+        if (ch === ' ') continue;
+        ctx.fillText(ch, p.x, p.y);
+      }
+    }
+  }
+
+  // ================= Dakshineswar prototype: interactive chimes cropped from the real photo =================
+  // Rather than drawing illustrated tube/bell shapes over the photo, each chime is a small
+  // rectangle cropped directly out of the source image at its pivot (the real copper pixels),
+  // redrawn every frame rotated by the physics-simulated swing angle. At rest the crop lands
+  // back exactly where it came from, so it reads as the untouched photo; only on a swing does
+  // it visibly move. Pivots follow the beam line as it appears in the photo (estimated in
+  // image-relative fractions, mapped through the same cover-fit used to draw the photo itself),
+  // so alignment holds at any viewport size. Gated on country.id — the other 19 states untouched.
+  function buildBengalChimes() {
+    bengalChimes = [];
+    if (!bgImageReady) return; // rebuilt again once the photo's onload fires
+    const fit = coverFit(bgImage.naturalWidth, bgImage.naturalHeight, W, H);
+    const count = 22;
+    for (let i = 0; i < count; i++) {
+      const t0 = i / (count - 1);
+      const xf = BEAM_P1.xf + (BEAM_P2.xf - BEAM_P1.xf) * t0;
+      const yf = BEAM_P1.yf + (BEAM_P2.yf - BEAM_P1.yf) * t0;
+      const px = fit.offsetX + xf * bgImage.naturalWidth * fit.scale;
+      const py = fit.offsetY + yf * bgImage.naturalHeight * fit.scale;
+      const kind = i % 5 === 4 ? 'plaque' : (i % 2 === 0 ? 'tube' : 'bell');
+      const lenFrac = 0.20 + 0.30 * t0 + 0.05 * Math.sin(i * 1.9); // shorter on the left, longer to the right, matching the photo's perspective
+      const srcW = kind === 'bell' ? 34 : kind === 'plaque' ? 20 : 18; // native-pixel crop width around this chime
+      const srcH = lenFrac * bgImage.naturalHeight * (kind === 'plaque' ? 0.55 : 1);
+      const srcX = xf * bgImage.naturalWidth - srcW / 2;
+      const srcY = yf * bgImage.naturalHeight;
+      const len = srcH * fit.scale;
+      const segLen = len / BENGAL_SEGMENTS;
+      const nodes = [{ x: px, y: py, ox: px, oy: py, pinned: true }];
+      for (let s = 1; s <= BENGAL_SEGMENTS; s++) {
+        const jitter = (Math.random() - 0.5) * 4;
+        const x = px + jitter * (s / BENGAL_SEGMENTS), y = py + segLen * s;
+        nodes.push({ x, y, ox: x, oy: y });
+      }
+      bengalChimes.push({
+        nodes, segLen, kind, srcX, srcY, srcW, srcH,
+        pitchIdx: Math.floor(t0 * Math.max(1, currentNoteFreqs.length - 0.001)),
+        lastStrikeT: -10, flash: 0,
+      });
+    }
+  }
+
+  function stepBengalChimes(dt) {
+    const dtScale = Math.min(2, Math.max(0.2, dt * 60));
+    const damp = Math.pow(0.985, dtScale);
+    bengalChimes.forEach(ch => {
+      const nodes = ch.nodes;
+      for (let s = 1; s <= BENGAL_SEGMENTS; s++) {
+        const n = nodes[s];
+        let ax = 0, ay = 0.4 * dtScale;
+        if (hasMouse) {
+          const dx = n.x - mouseX, dy = n.y - mouseY;
+          const dist2 = dx * dx + dy * dy;
+          const R = 70;
+          if (dist2 < R * R && dist2 > 1) {
+            const dist = Math.sqrt(dist2);
+            const proximity = 1 - dist / R;
+            const force = proximity * proximity * 4.5 * dtScale;
+            ax += (dx / dist) * force; ay += (dy / dist) * force;
+          }
+        }
+        const vx = (n.x - n.ox) * damp, vy = (n.y - n.oy) * damp;
+        n.ox = n.x; n.oy = n.y;
+        n.x += vx + ax; n.y += vy + ay;
+      }
+      for (let s = 1; s <= BENGAL_SEGMENTS; s++) {
+        const parent = nodes[s - 1], n = nodes[s];
+        const dx = n.x - parent.x, dy = n.y - parent.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+        const k = ch.segLen / dist;
+        n.x = parent.x + dx * k; n.y = parent.y + dy * k;
+      }
+      const tip = nodes[BENGAL_SEGMENTS];
+      const sp = Math.hypot(tip.x - tip.ox, tip.y - tip.oy) / dtScale;
+      // measured directly: this rigid (non-elastic) 4-node chain's tip speed plateaus
+      // around ~0.15 no matter how vigorously you move the cursor — a much lower
+      // ceiling than the soft-constraint cloth grid elsewhere on this page. The old
+      // threshold of 1.0 was never reachable, so chimes never rang.
+      if (sp > 0.035 && t - ch.lastStrikeT > 0.18) {
+        ch.lastStrikeT = t; ch.flash = 1;
+        const pan = Math.max(-1, Math.min(1, (tip.x - W / 2) / (W / 2)));
+        playChime(currentNoteFreqs[ch.pitchIdx], Math.min(1, sp / 0.15), pan, country.timbre);
+      }
+      ch.flash *= 0.9;
+    });
+  }
+
+  function drawBengalChimesRow(fit) {
+    bengalChimes.forEach(ch => {
+      const nodes = ch.nodes;
+      const glow = ch.flash;
+      const pivot = nodes[0];
+      const tip = nodes[nodes.length - 1];
+      const destW = ch.srcW * fit.scale, destH = ch.srcH * fit.scale;
+
+      // erase the photo's own copy at rest position first, so swinging the real crop away
+      // doesn't leave a duplicate tube visible underneath — smear a sliver of whatever sits
+      // just above it (beam wood / sky / greenery) down over the vacated rectangle.
+      ctx.drawImage(bgImage, ch.srcX, Math.max(0, ch.srcY - 4), ch.srcW, 4,
+        pivot.x - destW / 2, pivot.y, destW, destH);
+
+      const angle = Math.atan2(tip.x - pivot.x, tip.y - pivot.y);
+      ctx.save();
+      ctx.translate(pivot.x, pivot.y);
+      ctx.rotate(angle);
+      if (glow > 0.05) { ctx.shadowColor = `hsla(38,90%,75%,${glow})`; ctx.shadowBlur = 16 * glow; }
+      ctx.drawImage(bgImage, ch.srcX, ch.srcY, ch.srcW, ch.srcH, -destW / 2, 0, destW, destH);
+      ctx.shadowBlur = 0;
+      if (glow > 0.02) {
+        ctx.fillStyle = `hsla(42,95%,72%,${glow * 0.4})`;
+        ctx.fillRect(-destW / 2, 0, destW, destH);
+      }
+      ctx.restore();
+    });
+  }
+
+  function drawBengalScene() {
+    if (bgImageReady) {
+      const fit = coverFit(bgImage.naturalWidth, bgImage.naturalHeight, W, H);
+      ctx.drawImage(bgImage, fit.offsetX, fit.offsetY, fit.drawW, fit.drawH);
+      drawBengalChimesRow(fit);
+    } else {
+      ctx.fillStyle = '#cdb89a';
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function drawScene() {
+    if (country.id === 'westbengal') { drawBengalScene(); return; }
+    drawBackground(); drawRoof(); drawCloth();
+  }
+
+  let rafId = null;
+  function frame(now) {
+    if (lastTime === null) lastTime = now;
+    let dt = (now - lastTime) / 1000; dt = Math.min(dt, 0.05); lastTime = now;
+    step(dt);
+    ctx.clearRect(0, 0, W, H);
+    drawScene();
+    rafId = requestAnimationFrame(frame);
+  }
+  rafId = requestAnimationFrame(frame);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+      if (audioCtx && audioCtx.state === 'running') audioCtx.suspend();
+    } else {
+      if (rafId === null) { lastTime = null; rafId = requestAnimationFrame(frame); }
+      if (audioCtx && audioCtx.state === 'suspended' && !muted) audioCtx.resume();
+    }
+  });
+
+  // ================= country switching =================
+  function applyCountry(c) {
+    country = c;
+    countryIndex = COUNTRIES.indexOf(c);
+    if (countryIndex < 0) countryIndex = COUNTRIES.findIndex(x => x.id === c.id);
+    currentNoteFreqs = computeNoteFreqs(c);
+    document.getElementById('introTag').textContent = c.tag;
+    document.getElementById('introTitle').innerText = c.title;
+    document.getElementById('blurbText').textContent = c.blurb;
+    document.querySelectorAll('.destChip').forEach(el => el.classList.toggle('active', el.dataset.id === c.id));
+    const sel = document.getElementById('countrySelect');
+    if (sel) sel.value = c.id;
+    buildCloth();
+  }
+
+  // ================= UI wiring =================
+  function buildQuickCards() {
+    // left/right always show the previous/next country in the full list, wrapping
+    // around at the ends — clicking either keeps stepping through all 13 in order,
+    // not just bouncing between the same couple of alternates.
+    const n = COUNTRIES.length;
+    const left = COUNTRIES[(countryIndex - 1 + n) % n];
+    const right = COUNTRIES[(countryIndex + 1) % n];
+    document.querySelector('#quickLeft .badge').textContent = left.badge;
+    document.getElementById('quickLeftName').textContent = left.name;
+    document.querySelector('#quickRight .badge').textContent = right.badge;
+    document.getElementById('quickRightName').textContent = right.name;
+    document.getElementById('quickLeft').onclick = () => { applyCountry(left); buildQuickCards(); };
+    document.getElementById('quickRight').onclick = () => { applyCountry(right); buildQuickCards(); };
+  }
+
+  function buildDestinations() {
+    const grid = document.getElementById('destGrid');
+    grid.innerHTML = '';
+    COUNTRIES.forEach(c => {
+      const chip = document.createElement('button');
+      chip.className = 'destChip' + (c.id === country.id ? ' active' : '');
+      chip.textContent = c.badge + ' ' + c.name;
+      chip.dataset.id = c.id;
+      chip.addEventListener('click', () => { applyCountry(c); buildQuickCards(); location.hash = '#home'; });
+      grid.appendChild(chip);
+    });
+  }
+
+  function buildCountrySelect() {
+    const sel = document.getElementById('countrySelect');
+    sel.innerHTML = '';
+    COUNTRIES.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name;
+      sel.appendChild(opt);
+    });
+    sel.value = country.id;
+    sel.addEventListener('change', () => {
+      const c = COUNTRIES.find(x => x.id === sel.value);
+      if (c) { applyCountry(c); buildQuickCards(); buildDestinations(); }
+    });
+  }
+
+  // settings panel open/close
+  const panel = document.getElementById('panel');
+  document.getElementById('playBtn').addEventListener('click', () => panel.classList.toggle('open'));
+  document.getElementById('closePanel').addEventListener('click', () => panel.classList.remove('open'));
+
+  function syncPanelFields() {
+    document.getElementById('fWidth').value = Math.round(clothWidth);
+    document.getElementById('fHeight').value = Math.round(clothHeight);
+    document.getElementById('fCols').value = COLS;
+    document.getElementById('fRows').value = ROWS;
+    document.getElementById('fGravity').value = GRAVITY;
+    document.getElementById('fDamping').value = DAMPING;
+    document.getElementById('fPrecision').value = PRECISION;
+    document.getElementById('fStretch').value = STRETCH;
+    document.getElementById('fCompress').value = COMPRESS;
+    document.getElementById('fTouchRadius').value = TOUCH_RADIUS;
+    document.getElementById('fTouchForce').value = TOUCH_FORCE;
+    document.getElementById('fChimesOn').checked = chimesOn;
+    document.getElementById('fChimeVol').value = chimeVolume;
+    document.getElementById('fKeepBounds').checked = KEEP_BOUNDS;
+  }
+
+  document.getElementById('rebuildBtn').addEventListener('click', () => {
+    COLS = Math.max(4, parseInt(document.getElementById('fCols').value, 10) || COLS);
+    ROWS = Math.max(4, parseInt(document.getElementById('fRows').value, 10) || ROWS);
+    const w = parseFloat(document.getElementById('fWidth').value) || null;
+    const h = parseFloat(document.getElementById('fHeight').value) || null;
+    buildCloth(w, h);
+  });
+
+  [['fGravity', v => GRAVITY = v], ['fDamping', v => DAMPING = v], ['fPrecision', v => PRECISION = Math.max(1, Math.round(v))],
+   ['fStretch', v => STRETCH = v], ['fCompress', v => COMPRESS = v], ['fTouchRadius', v => TOUCH_RADIUS = v],
+   ['fTouchForce', v => TOUCH_FORCE = v], ['fChimeVol', v => chimeVolume = v]].forEach(([id, setter]) => {
+    document.getElementById(id).addEventListener('input', e => { const v = parseFloat(e.target.value); if (!isNaN(v)) setter(v); });
+  });
+  document.getElementById('fChimesOn').addEventListener('change', e => { chimesOn = e.target.checked; });
+  document.getElementById('fKeepBounds').addEventListener('change', e => { KEEP_BOUNDS = e.target.checked; });
+
+  // about modal
+  const aboutModal = document.getElementById('aboutModal');
+  document.getElementById('aboutBtn').addEventListener('click', () => aboutModal.classList.add('open'));
+  aboutModal.querySelector('.close').addEventListener('click', () => aboutModal.classList.remove('open'));
+  aboutModal.addEventListener('click', e => { if (e.target === aboutModal) aboutModal.classList.remove('open'); });
+
+  // contributions (local only, persisted for this browser)
+  const CONTRIB_KEY = 'budarina_contributions_v1';
+  let contributions = [];
+  try { contributions = JSON.parse(localStorage.getItem(CONTRIB_KEY)) || []; } catch (e) { contributions = []; }
+  function renderContributions() {
+    const list = document.getElementById('contribList');
+    const empty = document.getElementById('contribEmpty');
+    list.innerHTML = '';
+    contributions.forEach(name => {
+      const li = document.createElement('li'); li.textContent = name; list.appendChild(li);
+    });
+    empty.style.display = contributions.length ? 'none' : 'block';
+  }
+  document.getElementById('contribForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const input = document.getElementById('contribInput');
+    const name = input.value.trim();
+    if (!name) return;
+    contributions.push(name);
+    try { localStorage.setItem(CONTRIB_KEY, JSON.stringify(contributions)); } catch (err) {}
+    input.value = '';
+    renderContributions();
+  });
+
+  // init
+  applyCountry(country);
+  buildQuickCards();
+  buildDestinations();
+  buildCountrySelect();
+  syncPanelFields();
+  renderContributions();
+})();
+</script>
+</body>
+</html>

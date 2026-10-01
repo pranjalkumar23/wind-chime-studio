@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>पवन घंटी · Wind Bell</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    background: #e7dcc3;
+    cursor: none;
+    touch-action: none;
+  }
+  canvas {
+    display: block;
+    touch-action: none;
+  }
+  #cursorDot {
+    position: fixed;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff3d6 0%, #c9962b 60%, rgba(201,150,43,0) 100%);
+    box-shadow: 0 0 14px 4px rgba(201, 150, 43, 0.4);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+  }
+  #startOverlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 40%, rgba(231, 220, 195, 0.55), rgba(210, 195, 160, 0.9));
+    z-index: 10;
+    cursor: pointer;
+    transition: opacity 0.7s ease;
+  }
+  #startOverlay .panel {
+    position: relative;
+    padding: 2.4em 3.2em 2em;
+    text-align: center;
+    color: #4a2e1e;
+    background: linear-gradient(160deg, rgba(247, 238, 217, 0.95), rgba(232, 217, 181, 0.95));
+    border: 1px solid rgba(168, 69, 46, 0.5);
+    box-shadow: 0 0 0 1px rgba(201, 150, 43, 0.25) inset, 0 20px 50px rgba(90, 60, 20, 0.25);
+    border-radius: 4px;
+  }
+  #startOverlay .panel::before,
+  #startOverlay .panel::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #a8452e;
+    opacity: 0.8;
+  }
+  #startOverlay .panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+  #startOverlay .panel::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+  #startOverlay .dev {
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    font-size: 2.3em;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #a8452e;
+    margin: 0 0 0.2em 0;
+    text-shadow: 0 0 20px rgba(201, 150, 43, 0.25);
+  }
+  #startOverlay h1 {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 1.1em;
+    font-weight: 400;
+    font-style: italic;
+    letter-spacing: 0.08em;
+    margin: 0 0 1em 0;
+    color: rgba(74, 46, 30, 0.85);
+  }
+  #startOverlay p {
+    font-size: 0.95em;
+    opacity: 0.82;
+    margin: 0.2em 0;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+  #startOverlay .hint {
+    margin-top: 1.5em;
+    padding: 0.5em 1.4em;
+    border: 1px solid rgba(168, 69, 46, 0.5);
+    border-radius: 999px;
+    font-size: 0.78em;
+    letter-spacing: 0.06em;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: #a8452e;
+  }
+  #controls {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 6;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    color: rgba(74, 46, 30, 0.8);
+    font-size: 12px;
+    user-select: none;
+  }
+  #muteBtn {
+    background: rgba(201, 150, 43, 0.12);
+    border: 1px solid rgba(168, 69, 46, 0.45);
+    color: #a8452e;
+    border-radius: 999px;
+    padding: 5px 14px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    letter-spacing: 0.05em;
+  }
+  #muteBtn:hover {
+    background: rgba(201, 150, 43, 0.22);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="cursorDot"></div>
+<div id="controls"><button id="muteBtn">mute</button></div>
+<div id="startOverlay">
+  <div class="panel">
+    <div class="dev">पवन घंटी</div>
+    <h1>a curtain of verse, stirred by your hand</h1>
+    <p>Run your cursor through the hanging cloth of letters</p>
+    <p>beneath the temple gate, and listen for the bells.</p>
+    <div class="hint">click / tap to begin</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const cursorDot = document.getElementById('cursorDot');
+  const overlay = document.getElementById('startOverlay');
+  const muteBtn = document.getElementById('muteBtn');
+
+  let W = 0, H = 0, DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', () => { resize(); buildCloth(); });
+  resize();
+
+  // ================= audio: a soft synthesized temple-bell "door chime" =================
+  let audioCtx = null, masterGain = null, dryGain = null, reverbGain = null, muted = false;
+  let recentStrikes = 0;
+
+  function makeImpulseResponse(ac, duration, decay) {
+    const rate = ac.sampleRate;
+    const length = Math.max(1, Math.floor(rate * duration));
+    const impulse = ac.createBuffer(2, length, rate);
+    for (let ch = 0; ch < 2; ch++) {
+      const data = impulse.getChannelData(ch);
+      for (let i = 0; i < length; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+    }
+    return impulse;
+  }
+
+  function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.85;
+    masterGain.connect(audioCtx.destination);
+    dryGain = audioCtx.createGain();
+    dryGain.gain.value = 0.75;
+    dryGain.connect(masterGain);
+    const convolver = audioCtx.createConvolver();
+    convolver.buffer = makeImpulseResponse(audioCtx, 2.8, 2.6);
+    reverbGain = audioCtx.createGain();
+    reverbGain.gain.value = 0.55;
+    reverbGain.connect(convolver);
+    convolver.connect(masterGain);
+  }
+
+  const PARTIALS = [
+    { ratio: 1.00, amp: 1.00, decay: 1.8 },
+    { ratio: 2.76, amp: 0.42, decay: 1.2 },
+    { ratio: 4.10, amp: 0.22, decay: 0.8 },
+    { ratio: 5.6,  amp: 0.10, decay: 0.5 },
+  ];
+
+  function playChime(freq, velocity, pan) {
+    if (!audioCtx || muted) return;
+    if (recentStrikes > 14) return;
+    recentStrikes++;
+    setTimeout(() => { recentStrikes--; }, 200);
+
+    const now = audioCtx.currentTime;
+    const vel = Math.min(1, Math.max(0.08, velocity));
+    const bus = audioCtx.createGain();
+    bus.gain.value = 1;
+    const panner = audioCtx.createStereoPanner();
+    panner.pan.value = Math.max(-1, Math.min(1, pan || 0));
+    bus.connect(panner);
+    panner.connect(dryGain);
+    panner.connect(reverbGain);
+
+    PARTIALS.forEach(p => {
+      const osc = audioCtx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = freq * p.ratio;
+      const g = audioCtx.createGain();
+      const peak = p.amp * vel * 0.3;
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(peak, now + 0.005);
+      g.gain.exponentialRampToValueAtTime(Math.max(0.0001, peak * 0.001), now + p.decay);
+      osc.connect(g);
+      g.connect(bus);
+      osc.start(now);
+      osc.stop(now + p.decay + 0.5);
+    });
+  }
+
+  const BASE = 261.6; // C4
+  const PENT_STEPS = [0, 2, 4, 7, 9];
+  const NOTE_FREQS = [];
+  for (let oct = 0; oct < 3; oct++) PENT_STEPS.forEach(s => NOTE_FREQS.push(BASE * Math.pow(2, (oct * 12 + s) / 12)));
+
+  // ================= the hanging verse (original composition) =================
+  const VERSE = "सुनहरे शिखर के नीचे हवा की घंटियाँ धीरे धीरे बजती हैं। हर एक ध्वनि एक पुरानी कहानी सुनाती है, मंदिर के द्वार पर बजने वाली मीठी पुकार। स्पर्श करो और सुनो, हवा कुछ कहती है। ";
+
+  // ================= cloth simulation (Verlet grid, pinned along the temple beam) =================
+  let COLS = 42, ROWS = 30;
+  const GRAVITY = 55;
+  const DAMPING = 0.982;
+  const PRECISION = 5;
+  const STRETCH_MAX = 1.14;
+  const COMPRESS_MIN = 0.86;
+  const TOUCH_RADIUS = 78;
+  const TOUCH_FORCE = 620;
+  const STRIKE_SPEED = 1.3;
+
+  let particles = [];
+  let colSpacing = 0, rowSpacing = 0;
+  let beamY = 0, clothLeft = 0, clothWidth = 0;
+  const colFlash = [];
+  const colCooldown = [];
+
+  function idx(c, r) { return r * COLS + c; }
+
+  function buildCloth() {
+    beamY = H * 0.30;
+    clothWidth = Math.min(W * 0.84, 920);
+    clothLeft = W / 2 - clothWidth / 2;
+    const clothHeight = Math.max(H * 0.4, H - beamY - Math.min(36, H * 0.03));
+    colSpacing = clothWidth / (COLS - 1);
+    rowSpacing = clothHeight / (ROWS - 1);
+
+    particles = new Array(COLS * ROWS);
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const x = clothLeft + c * colSpacing;
+        const y = beamY + r * rowSpacing;
+        particles[idx(c, r)] = { x, y, ox: x, oy: y, pinned: r === 0 };
+      }
+    }
+    colFlash.length = 0;
+    colCooldown.length = 0;
+    for (let c = 0; c < COLS; c++) { colFlash.push(0); colCooldown.push(-10); }
+  }
+  buildCloth();
+
+  // ================= cursor tracking =================
+  let mouseX = -9999, mouseY = -9999, hasMouse = false;
+
+  function onPointerMove(clientX, clientY) {
+    mouseX = clientX; mouseY = clientY; hasMouse = true;
+    cursorDot.style.left = clientX + 'px';
+    cursorDot.style.top = clientY + 'px';
+  }
+  window.addEventListener('mousemove', e => onPointerMove(e.clientX, e.clientY));
+  window.addEventListener('touchmove', e => {
+    if (e.touches[0]) onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+  window.addEventListener('mouseleave', () => { hasMouse = false; });
+
+  // ================= start / mute =================
+  function start() {
+    initAudio();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.style.display = 'none', 700);
+  }
+  overlay.addEventListener('click', start);
+  overlay.addEventListener('touchstart', start, { passive: true });
+
+  muteBtn.addEventListener('click', () => {
+    muted = !muted;
+    muteBtn.textContent = muted ? 'unmute' : 'mute';
+    if (masterGain) masterGain.gain.value = muted ? 0 : 0.85;
+  });
+
+  // ================= physics step =================
+  let t = 0, lastTime = null;
+
+  function satisfyConstraint(a, b, rest) {
+    let dx = b.x - a.x, dy = b.y - a.y;
+    let dist = Math.sqrt(dx * dx + dy * dy) || 0.0001;
+    const ratio = dist / rest;
+    let target;
+    if (ratio > STRETCH_MAX) target = rest * STRETCH_MAX;
+    else if (ratio < COMPRESS_MIN) target = rest * COMPRESS_MIN;
+    else return;
+    const corr = (dist - target) / dist;
+    if (a.pinned && b.pinned) return;
+    if (a.pinned) { b.x -= dx * corr; b.y -= dy * corr; }
+    else if (b.pinned) { a.x += dx * corr; a.y += dy * corr; }
+    else { const h = corr * 0.5; a.x += dx * h; a.y += dy * h; b.x -= dx * h; b.y -= dy * h; }
+  }
+
+  function step(dt) {
+    t += dt;
+
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      if (p.pinned) continue;
+      let ax = 0, ay = GRAVITY;
+
+      if (hasMouse) {
+        const dx = p.x - mouseX, dy = p.y - mouseY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < TOUCH_RADIUS && dist > 0.001) {
+          const proximity = 1 - dist / TOUCH_RADIUS;
+          const force = proximity * proximity * TOUCH_FORCE;
+          ax += (dx / dist) * force;
+          ay += (dy / dist) * force;
+        }
+      }
+
+      const vx = (p.x - p.ox) * DAMPING;
+      const vy = (p.y - p.oy) * DAMPING;
+      p.ox = p.x; p.oy = p.y;
+      p.x += vx + ax * dt * dt;
+      p.y += vy + ay * dt * dt;
+    }
+
+    for (let iter = 0; iter < PRECISION; iter++) {
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS - 1; c++) satisfyConstraint(particles[idx(c, r)], particles[idx(c + 1, r)], colSpacing);
+      }
+      for (let c = 0; c < COLS; c++) {
+        for (let r = 0; r < ROWS - 1; r++) satisfyConstraint(particles[idx(c, r)], particles[idx(c, r + 1)], rowSpacing);
+      }
+    }
+
+    // door chimes: each column rings like one hanging strand when disturbed fast enough
+    for (let c = 0; c < COLS; c++) {
+      let maxSpeed = 0;
+      for (let r = 1; r < ROWS; r++) {
+        const p = particles[idx(c, r)];
+        const sp = Math.hypot(p.x - p.ox, p.y - p.oy) / Math.max(dt, 0.001);
+        if (sp > maxSpeed) maxSpeed = sp;
+      }
+      if (maxSpeed > STRIKE_SPEED * 60 && t - colCooldown[c] > 0.16) {
+        colCooldown[c] = t;
+        colFlash[c] = 1;
+        const noteIdx = Math.floor((c / (COLS - 1)) * (NOTE_FREQS.length - 0.001));
+        const pan = (c / (COLS - 1)) * 2 - 1;
+        playChime(NOTE_FREQS[noteIdx], Math.min(1, maxSpeed / 400), pan);
+      }
+      colFlash[c] *= 0.9;
+    }
+  }
+
+  // ================= background: warm linen sky + temple gateway =================
+  function drawBackground() {
+    const sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, '#efe4c8');
+    sky.addColorStop(0.5, '#e3d3ab');
+    sky.addColorStop(1, '#cdb98d');
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    for (let i = 0; i < 70; i++) {
+      const sx = (i * 83.7) % W;
+      const sy = (i * 47.3) % H;
+      ctx.globalAlpha = 0.05 + 0.04 * Math.abs(Math.sin(i));
+      ctx.fillStyle = '#5a3a20';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function drawGateway() {
+    const cx = W / 2;
+    const beamHalf = clothWidth / 2 + 24;
+
+    // shikhara (temple spire) rising above the beam
+    ctx.save();
+    ctx.translate(cx, beamY);
+    const spireW = Math.min(W * 0.22, 200);
+    const spireH = beamY * 0.82;
+    const grad = ctx.createLinearGradient(-spireW / 2, -spireH, spireW / 2, 0);
+    grad.addColorStop(0, '#c9962b');
+    grad.addColorStop(0.5, '#e0b545');
+    grad.addColorStop(1, '#a8452e');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(0, -spireH);
+    ctx.bezierCurveTo(spireW * 0.5, -spireH * 0.7, spireW * 0.42, -spireH * 0.2, spireW * 0.5, 0);
+    ctx.lineTo(-spireW * 0.5, 0);
+    ctx.bezierCurveTo(-spireW * 0.42, -spireH * 0.2, -spireW * 0.5, -spireH * 0.7, 0, -spireH);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(90, 45, 20, 0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // amalaka rings along the spire
+    for (let k = 1; k <= 4; k++) {
+      const ry = -spireH * (k / 5);
+      const rw = spireW * (0.24 + 0.1 * (1 - k / 5));
+      ctx.beginPath();
+      ctx.ellipse(0, ry, rw, rw * 0.18, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(90, 45, 20, 0.35)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    // kalasha finial
+    ctx.beginPath();
+    ctx.ellipse(0, -spireH - 10, 7, 10, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#e0b545';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-9, -spireH - 2);
+    ctx.lineTo(9, -spireH - 2);
+    ctx.lineTo(0, -spireH + 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // the beam (architrave) the cloth hangs from
+    ctx.save();
+    ctx.shadowColor = 'rgba(60, 30, 10, 0.35)';
+    ctx.shadowBlur = 20;
+    ctx.shadowOffsetY = 8;
+    const beamGrad = ctx.createLinearGradient(cx - beamHalf, beamY - 10, cx + beamHalf, beamY + 6);
+    beamGrad.addColorStop(0, '#8a5a2b');
+    beamGrad.addColorStop(0.5, '#c9962b');
+    beamGrad.addColorStop(1, '#8a5a2b');
+    ctx.fillStyle = beamGrad;
+    ctx.beginPath();
+    ctx.roundRect(cx - beamHalf, beamY - 9, beamHalf * 2, 16, 4);
+    ctx.fill();
+    ctx.restore();
+
+    // small jali-arch frieze along the beam
+    ctx.strokeStyle = 'rgba(90, 45, 20, 0.45)';
+    ctx.lineWidth = 1.2;
+    const archCount = Math.round(beamHalf * 2 / 26);
+    for (let k = 0; k < archCount; k++) {
+      const ax = cx - beamHalf + (k + 0.5) * (beamHalf * 2 / archCount);
+      ctx.beginPath();
+      ctx.arc(ax, beamY + 7, 8, Math.PI, 0);
+      ctx.stroke();
+    }
+  }
+
+  // ================= the cloth of letters =================
+  function drawCloth() {
+    const fontSize = Math.min(colSpacing, rowSpacing) * 1.05;
+    ctx.font = `${fontSize}px 'Noto Sans Devanagari', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    for (let c = 0; c < COLS; c++) {
+      const flash = colFlash[c];
+      const light = 28 + flash * 45;
+      ctx.fillStyle = flash > 0.04
+        ? `hsl(28, 70%, ${light}%)`
+        : `hsl(20, 38%, ${26 + (c % 3) * 3}%)`;
+      for (let r = 1; r < ROWS; r++) {
+        const p = particles[idx(c, r)];
+        const ch = VERSE[(r * COLS + c) % VERSE.length];
+        if (ch === ' ') continue;
+        ctx.fillText(ch, p.x, p.y);
+      }
+    }
+  }
+
+  function drawScene() {
+    drawBackground();
+    drawGateway();
+    drawCloth();
+  }
+
+  let rafId = null;
+  function frame(now) {
+    if (lastTime === null) lastTime = now;
+    let dt = (now - lastTime) / 1000;
+    dt = Math.min(dt, 0.05);
+    lastTime = now;
+
+    step(dt);
+    ctx.clearRect(0, 0, W, H);
+    drawScene();
+
+    window.__debug = {
+      W, H, beamY, colSpacing, rowSpacing,
+      col0: Array.from({ length: 8 }, (_, r) => particles[idx(0, r)]).map(p => ({ x: Math.round(p.x), y: Math.round(p.y), pinned: p.pinned })),
+    };
+    rafId = requestAnimationFrame(frame);
+  }
+  rafId = requestAnimationFrame(frame);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+      if (audioCtx && audioCtx.state === 'running') audioCtx.suspend();
+    } else {
+      if (rafId === null) { lastTime = null; rafId = requestAnimationFrame(frame); }
+      if (audioCtx && audioCtx.state === 'suspended' && !muted) audioCtx.resume();
+    }
+  });
+})();
+</script>
+</body>
+</html>
